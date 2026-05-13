@@ -1,5 +1,23 @@
+# Virtualenv & Python caches
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
+
+# Streamlit (secrets ne doivent jamais être commités)
 .streamlit/secrets.toml
+
+# Variables d'environnement locales
 .env
+.env.*
+
+# Artefacts de développement
+.screenshots/
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
