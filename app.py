@@ -463,7 +463,7 @@ def _atlas_plotly_selection_points(plotly_return: Any) -> list[dict[str, Any]]:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def load_regulatory_atlas() -> tuple[list[dict[str, Any]], str]:
-    """Charge `regulatory_atlas.json` et fusionne les scores depuis `data/regulatory_atlas_scores.csv` (dernière ligne par ISO, date d'effet <= aujourd'hui)."""
+    """Charge l’atlas pays (JSON) et fusionne les scores depuis la table CSV locale (dernière ligne par ISO, date d'effet <= aujourd'hui)."""
     base = Path(__file__).resolve().parent
     jpath = base / "regulatory_atlas.json"
     if not jpath.exists():
@@ -479,7 +479,7 @@ def load_regulatory_atlas() -> tuple[list[dict[str, Any]], str]:
     meta = ""
     cpath = base / "data" / "regulatory_atlas_scores.csv"
     if not cpath.exists():
-        meta = "Fichier `data/regulatory_atlas_scores.csv` absent — ajoute des lignes versionnées pour alimenter la carte."
+        meta = "Aucune table de scores versionnée — la carte ne peut pas afficher d’indices tant qu’elle n’est pas renseignée."
         for r in rows:
             for col in ATLAS_SCORE_VALUE_COLUMNS:
                 r[col] = None
@@ -488,14 +488,14 @@ def load_regulatory_atlas() -> tuple[list[dict[str, Any]], str]:
     try:
         sdf = pd.read_csv(cpath)
     except Exception:
-        meta = "Lecture de `data/regulatory_atlas_scores.csv` impossible."
+        meta = "Impossible de lire la table des scores versionnés."
         for r in rows:
             for col in ATLAS_SCORE_VALUE_COLUMNS:
                 r[col] = None
         return rows, meta
 
     if sdf.empty:
-        meta = "`data/regulatory_atlas_scores.csv` est vide."
+        meta = "La table des scores versionnés est vide."
         for r in rows:
             for col in ATLAS_SCORE_VALUE_COLUMNS:
                 r[col] = None
@@ -516,8 +516,8 @@ def load_regulatory_atlas() -> tuple[list[dict[str, Any]], str]:
     lu = latest.set_index("iso_a3")
     max_eff = latest["effective_date"].max()
     meta = (
-        f"Scores issus de `data/regulatory_atlas_scores.csv` — dernière date d'effet (max.) : "
-        f"{max_eff:%Y-%m-%d}. Chaque pays affiche la source de sa ligne la plus récente dans la fiche."
+        f"Dernière date d’effet des indices (tous pays confondus) : **{max_eff:%Y-%m-%d}**. "
+        "La fiche pays rappelle la source et la date pour la ligne retenue."
     )
 
     for r in rows:
@@ -752,6 +752,29 @@ def article_matches(row: pd.Series, query: str) -> bool:
         return True
     blob = f"{row.get('title', '')} {row.get('summary', '')} {row.get('source', '')}".lower()
     return query.lower() in blob
+
+
+def _streamlit_major_minor() -> tuple[int, int]:
+    """Parse streamlit.__version__ en (major, minor) pour les garde-fous d'API."""
+    v = getattr(st, "__version__", "0.0.0")
+    toks = v.replace("rc", ".").replace("dev", ".").split(".")
+    def _i(x: str) -> int:
+        s = "".join(c for c in x if c.isdigit())
+        return int(s) if s else 0
+
+    return _i(toks[0]), _i(toks[1]) if len(toks) > 1 else 0
+
+
+def render_atlas_choropleth_chart(fig: go.Figure, *, map_chart_key: str) -> Any:
+    """Affiche la carte ; `on_select` seulement si Streamlit le supporte (évite crash sur environnements anciens)."""
+    kw: dict[str, Any] = dict(width="stretch", config=PLOTLY_CONFIG, key=map_chart_key)
+    maj, minr = _streamlit_major_minor()
+    if (maj, minr) >= (1, 47):
+        try:
+            return st.plotly_chart(fig, on_select="rerun", selection_mode="points", **kw)
+        except TypeError:
+            pass
+    return st.plotly_chart(fig, **kw)
 
 
 PLOTLY_CONFIG: dict[str, Any] = {
@@ -2400,9 +2423,15 @@ with tab_flows:
 
 with tab_news:
     st.subheader("Actu & réglementation")
-    sub_actu, sub_reg = st.tabs(["Actu crypto", "Réglementation — atlas par zone"])
+    news_section = st.radio(
+        "Afficher",
+        ["Actu crypto", "Réglementation — atlas par zone"],
+        horizontal=True,
+        key="news_subsection",
+        help="Basculer entre le fil d’actu crypto et l’atlas réglementaire (carte + fiches). Un menu évite le bug d’affichage des onglets imbriqués sur Streamlit Cloud.",
+    )
 
-    with sub_actu:
+    if news_section == "Actu crypto":
         news_query = st.text_input(
             "Filtrer les articles (actu)",
             key="news_filter_actu",
@@ -2431,28 +2460,27 @@ with tab_news:
         except Exception as exc:
             st.warning(f"Flux RSS indisponibles : {exc}")
 
-    with sub_reg:
+    else:
         st.markdown(
             "**Réglementation** : vue géographique indicative. Les scores sur la carte sont des **indices qualitatifs 0–100** "
-            "(non officiels), lus depuis `data/regulatory_atlas_scores.csv` (date d'effet + source par ligne) pour comparer "
+            "(non officiels), mis à jour par **date d’effet** avec une **source** rappelée dans chaque fiche pays, pour comparer "
             "visuellement les juridictions ; ils ne remplacent pas l'avis juridique. Les liens ci-dessous pointent vers des "
             "**sites institutionnels** à consulter pour toute décision."
         )
         with st.expander("ℹ️ Méthode de l'atlas", expanded=False):
             st.markdown(
                 """
-                - **Carte** : géographie et textes dans `regulatory_atlas.json` ; les **indices 0–100** proviennent de `data/regulatory_atlas_scores.csv`
-                  (plusieurs lignes par pays autorisées : on retient la **dernière date d'effet** ≤ aujourd'hui, avec citation de source par ligne).
-                - **Carte ↔ liste** : un clic sur un pays (sélection Plotly) met à jour la liste ; un changement via la liste **réinitialise** la sélection carte pour éviter les conflits d'état.
+                - **Carte** : géographie et textes descriptifs d’un côté, **indices 0–100** versionnés de l’autre (plusieurs dates par pays possibles : on retient la **dernière date d’effet** ≤ aujourd’hui, avec citation de source par ligne).
+                - **Carte ↔ liste** : un clic sur un pays (sélection Plotly, si Streamlit ≥ 1.47) met à jour la liste ; un changement via la liste **réinitialise** la sélection carte pour éviter les conflits d'état.
                 - **Articles** : croisement des flux réglementaires (SEC, ESMA, BCE, FCA, AMF, EBA, BoE, …) + actu crypto, filtré par mots-clés du pays.
-                - **Évolution** : enrichir le JSON (pays, liens, mots-clés) et le CSV (nouvelles dates + sources primaires) sans toucher au code.
+                - **Évolution** : enrichir les données pays (zones, liens, mots-clés) et les entrées de scores (nouvelles dates, sources primaires) sans toucher au code de l’app.
                 """
             )
 
         atlas_rows, atlas_scores_meta = load_regulatory_atlas()
         if not atlas_rows:
             st.warning(
-                "Fichier `regulatory_atlas.json` introuvable ou vide. Ajoute-le à la racine du projet pour activer la carte."
+                "Données d’atlas (pays et textes) introuvables ou vides — la carte réglementaire ne peut pas s’afficher."
             )
         else:
             if atlas_scores_meta:
@@ -2506,14 +2534,7 @@ with tab_news:
                     tickfont=dict(color="#cbd5e1"),
                 )
             )
-            atlas_map_event = st.plotly_chart(
-                map_fig,
-                width="stretch",
-                config=PLOTLY_CONFIG,
-                key=map_chart_key,
-                on_select="rerun",
-                selection_mode="points",
-            )
+            atlas_map_event = render_atlas_choropleth_chart(map_fig, map_chart_key=map_chart_key)
 
             names = atlas_df["name_fr"].tolist()
             default_name = "France" if "France" in names else names[0]
@@ -2583,7 +2604,7 @@ with tab_news:
                 extra = merged[merged.apply(article_matches, axis=1, query=selected_name)]
                 combined = pd.concat([matched, extra], ignore_index=True).drop_duplicates(subset=["link"]).head(35)
                 if combined.empty:
-                    st.info("Aucun article ne correspond encore aux mots-clés de ce pays — élargis les `keywords` dans `regulatory_atlas.json`.")
+                    st.info("Aucun article ne correspond encore aux mots-clés de ce pays — tu peux enrichir les mots-clés dans la fiche pays (données d’atlas).")
                 else:
                     for _, article in combined.iterrows():
                         summary = str(article.get("summary", ""))
@@ -2632,7 +2653,7 @@ with tab_method:
         - **DefiLlama (`stablecoins.llama.fi`)** — capitalisations, mécanismes, chaînes, historique des stablecoins.
         - **Yahoo Finance (via `yfinance`)** — benchmarks (`GLD`, `BLOK`) et suivi du peg des stablecoins (`USDT-USD`, `USDC-USD`, …).
         - **Flux RSS** — **Actu** : CoinDesk, Cointelegraph, Bitcoin Magazine. **Réglementation** : SEC, ESMA, BCE, FCA, AMF (flux RSS AMF), ABE (EBA), Bank of England.
-        - **Atlas réglementaire** — `regulatory_atlas.json` (pays, textes, liens, mots-clés) + `data/regulatory_atlas_scores.csv` (indices 0–100 versionnés par date d'effet et citation de source) ; non juridique.
+        - **Atlas réglementaire** — fiches pays (textes, liens, mots-clés) et **indices 0–100** versionnés (date d’effet et source par entrée) ; contenu pédagogique, non juridique.
 
         Tout est gratuit, sans clé API. CoinGecko applique un plafond de requêtes : un message d'erreur 429
         peut apparaître temporairement, il suffit de rafraîchir quelques secondes plus tard.
