@@ -31,8 +31,11 @@ CRYPTO_NEWS_FEEDS = {
 REGULATORY_NEWS_FEEDS = {
     "Régulation — SEC": "https://www.sec.gov/news/pressreleases.rss",
     "Régulation — ESMA": "https://www.esma.europa.eu/rss.xml",
-    "Régulation — ECB": "https://www.ecb.europa.eu/rss/press.html",
+    "Régulation — BCE (ECB)": "https://www.ecb.europa.eu/rss/press.html",
     "Régulation — FCA (Royaume-Uni)": "https://www.fca.org.uk/news/rss",
+    "Régulation — AMF (France)": "https://www.amf-france.org/fr/flux-rss/display/21",
+    "Régulation — ABE (EBA)": "https://www.eba.europa.eu/rss.xml",
+    "Régulation — Bank of England": "https://www.bankofengland.co.uk/rss/news",
 }
 NEWS_FEEDS_ALL: dict[str, str] = {**CRYPTO_NEWS_FEEDS, **REGULATORY_NEWS_FEEDS}
 
@@ -42,6 +45,12 @@ ATLAS_METRIC_COLUMNS: dict[str, tuple[str, str]] = {
     "Stablecoins & banques commerciales": ("bank_stablecoin", "Indice illustratif 0–100 : pilotes bancaires, tokenisation des dépôts, partenariats public-privé."),
     "Stade retail CBDC (recherche & pilotes)": ("retail_cbdc", "Indice illustratif 0–100 : avancement des travaux sur une monnaie digitale de banque centrale pour le grand public."),
 }
+ATLAS_SCORE_VALUE_COLUMNS: tuple[str, ...] = (
+    "crypto_framework",
+    "state_stablecoin",
+    "bank_stablecoin",
+    "retail_cbdc",
+)
 BENCHMARKS = {
     "Or — proxy ETF GLD": "GLD",
     "MSCI ACWI IMI Blockchain Economy Index — proxy ETF BLOK": "BLOK",
@@ -433,16 +442,104 @@ def get_news(strand: str | None = None) -> pd.DataFrame:
     return pd.DataFrame(articles)
 
 
+def _on_atlas_country_selectbox_changed() -> None:
+    """Nouvelle clé Plotly pour effacer une sélection carte obsolète après choix dans la liste."""
+    st.session_state["atlas_map_widget_id"] = int(st.session_state.get("atlas_map_widget_id", 0)) + 1
+
+
+def _atlas_plotly_selection_points(plotly_return: Any) -> list[dict[str, Any]]:
+    if plotly_return is None:
+        return []
+    sel = getattr(plotly_return, "selection", None)
+    if sel is None and isinstance(plotly_return, dict):
+        sel = plotly_return.get("selection")
+    if sel is None:
+        return []
+    pts = getattr(sel, "points", None)
+    if pts is None and isinstance(sel, dict):
+        pts = sel.get("points") or []
+    return list(pts) if pts else []
+
+
 @st.cache_data(ttl=3600, show_spinner=False)
-def load_regulatory_atlas() -> list[dict[str, Any]]:
-    path = Path(__file__).resolve().parent / "regulatory_atlas.json"
-    if not path.exists():
-        return []
+def load_regulatory_atlas() -> tuple[list[dict[str, Any]], str]:
+    """Charge `regulatory_atlas.json` et fusionne les scores depuis `data/regulatory_atlas_scores.csv` (dernière ligne par ISO, date d'effet <= aujourd'hui)."""
+    base = Path(__file__).resolve().parent
+    jpath = base / "regulatory_atlas.json"
+    if not jpath.exists():
+        return [], ""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(jpath.read_text(encoding="utf-8"))
     except Exception:
-        return []
-    return data if isinstance(data, list) else []
+        return [], ""
+    rows = data if isinstance(data, list) else []
+    if not rows:
+        return [], ""
+
+    meta = ""
+    cpath = base / "data" / "regulatory_atlas_scores.csv"
+    if not cpath.exists():
+        meta = "Fichier `data/regulatory_atlas_scores.csv` absent — ajoute des lignes versionnées pour alimenter la carte."
+        for r in rows:
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                r[col] = None
+        return rows, meta
+
+    try:
+        sdf = pd.read_csv(cpath)
+    except Exception:
+        meta = "Lecture de `data/regulatory_atlas_scores.csv` impossible."
+        for r in rows:
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                r[col] = None
+        return rows, meta
+
+    if sdf.empty:
+        meta = "`data/regulatory_atlas_scores.csv` est vide."
+        for r in rows:
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                r[col] = None
+        return rows, meta
+
+    sdf = sdf.copy()
+    sdf["effective_date"] = pd.to_datetime(sdf["effective_date"], errors="coerce")
+    today = pd.Timestamp.now(tz=None).normalize()
+    sdf = sdf[sdf["effective_date"].notna() & (sdf["effective_date"] <= today)]
+    if sdf.empty:
+        meta = "Aucune ligne de scores avec une date d'effet valide et ≤ aujourd'hui."
+        for r in rows:
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                r[col] = None
+        return rows, meta
+
+    latest = sdf.sort_values(["iso_a3", "effective_date"]).groupby("iso_a3", as_index=False).tail(1)
+    lu = latest.set_index("iso_a3")
+    max_eff = latest["effective_date"].max()
+    meta = (
+        f"Scores issus de `data/regulatory_atlas_scores.csv` — dernière date d'effet (max.) : "
+        f"{max_eff:%Y-%m-%d}. Chaque pays affiche la source de sa ligne la plus récente dans la fiche."
+    )
+
+    for r in rows:
+        iso = r.get("iso_a3")
+        if not iso or iso not in lu.index:
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                r[col] = None
+            r["atlas_scores_effective_date"] = None
+            r["atlas_scores_source"] = None
+            continue
+        srow = lu.loc[iso]
+        if isinstance(srow, pd.DataFrame):
+            srow = srow.iloc[0]
+        for col in ATLAS_SCORE_VALUE_COLUMNS:
+            val = srow.get(col)
+            r[col] = int(val) if pd.notna(val) else None
+        eff = srow.get("effective_date")
+        r["atlas_scores_effective_date"] = eff.strftime("%Y-%m-%d") if pd.notna(eff) else None
+        src = srow.get("source_citation")
+        r["atlas_scores_source"] = str(src) if pd.notna(src) and src is not None else None
+
+    return rows, meta
 
 
 def news_matches_any_keyword(row: pd.Series, keywords: list[str]) -> bool:
@@ -2337,25 +2434,38 @@ with tab_news:
     with sub_reg:
         st.markdown(
             "**Réglementation** : vue géographique indicative. Les scores sur la carte sont des **indices qualitatifs 0–100** "
-            "(non officiels) pour comparer visuellement les juridictions ; ils ne remplacent pas l'avis juridique. "
-            "Les liens ci-dessous pointent vers des **sites institutionnels** à consulter pour toute décision."
+            "(non officiels), lus depuis `data/regulatory_atlas_scores.csv` (date d'effet + source par ligne) pour comparer "
+            "visuellement les juridictions ; ils ne remplacent pas l'avis juridique. Les liens ci-dessous pointent vers des "
+            "**sites institutionnels** à consulter pour toute décision."
         )
         with st.expander("ℹ️ Méthode de l'atlas", expanded=False):
             st.markdown(
                 """
-                - **Carte** : chaque pays du fichier `regulatory_atlas.json` est coloré selon la dimension choisie (cadre crypto, stablecoin public, banques, CBDC retail).
-                - **Articles** : croisement des flux **SEC, ESMA, ECB, FCA** + filtre par mots-clés liés au pays (nom, régulateurs cités dans la fiche).
-                - **Évolution** : enrichis le JSON pour ajouter des pays, des liens officiels et des mots-clés ; les scores restent éditoriaux jusqu'à branchement sur une base juridique structurée.
+                - **Carte** : géographie et textes dans `regulatory_atlas.json` ; les **indices 0–100** proviennent de `data/regulatory_atlas_scores.csv`
+                  (plusieurs lignes par pays autorisées : on retient la **dernière date d'effet** ≤ aujourd'hui, avec citation de source par ligne).
+                - **Carte ↔ liste** : un clic sur un pays (sélection Plotly) met à jour la liste ; un changement via la liste **réinitialise** la sélection carte pour éviter les conflits d'état.
+                - **Articles** : croisement des flux réglementaires (SEC, ESMA, BCE, FCA, AMF, EBA, BoE, …) + actu crypto, filtré par mots-clés du pays.
+                - **Évolution** : enrichir le JSON (pays, liens, mots-clés) et le CSV (nouvelles dates + sources primaires) sans toucher au code.
                 """
             )
 
-        atlas_rows = load_regulatory_atlas()
+        atlas_rows, atlas_scores_meta = load_regulatory_atlas()
         if not atlas_rows:
             st.warning(
                 "Fichier `regulatory_atlas.json` introuvable ou vide. Ajoute-le à la racine du projet pour activer la carte."
             )
         else:
+            if atlas_scores_meta:
+                st.caption(atlas_scores_meta)
             atlas_df = pd.DataFrame(atlas_rows)
+            for col in ATLAS_SCORE_VALUE_COLUMNS:
+                if col in atlas_df.columns:
+                    atlas_df[col] = pd.to_numeric(atlas_df[col], errors="coerce").fillna(0).astype(int)
+
+            if "atlas_map_widget_id" not in st.session_state:
+                st.session_state["atlas_map_widget_id"] = 0
+            map_chart_key = f"atlas_choropleth_{st.session_state['atlas_map_widget_id']}"
+
             metric_choice = st.selectbox(
                 "Colorer la carte selon",
                 options=list(ATLAS_METRIC_COLUMNS.keys()),
@@ -2375,6 +2485,7 @@ with tab_news:
                 color_continuous_scale=["#0f172a", "#1d4ed8", "#38bdf8", "#7dd3fc"],
                 range_color=(0, 100),
             )
+            map_fig.update_traces(customdata=atlas_df[["iso_a3", "name_fr"]].values)
             map_fig.update_geos(
                 showcountries=True,
                 countrycolor="rgba(148,163,184,0.28)",
@@ -2389,17 +2500,51 @@ with tab_news:
                 title=f"Atlas réglementaire — {metric_choice}",
                 legend_below=False,
             )
-            map_fig.update_layout(coloraxis_colorbar=dict(title=dict(text="Indice 0–100", font=dict(color="#cbd5e1")), tickfont=dict(color="#cbd5e1")))
-            st.plotly_chart(map_fig, width="stretch", config=PLOTLY_CONFIG)
+            map_fig.update_layout(
+                coloraxis_colorbar=dict(
+                    title=dict(text="Indice 0–100", font=dict(color="#cbd5e1")),
+                    tickfont=dict(color="#cbd5e1"),
+                )
+            )
+            atlas_map_event = st.plotly_chart(
+                map_fig,
+                width="stretch",
+                config=PLOTLY_CONFIG,
+                key=map_chart_key,
+                on_select="rerun",
+                selection_mode="points",
+            )
 
             names = atlas_df["name_fr"].tolist()
-            default_ix = names.index("France") if "France" in names else 0
+            default_name = "France" if "France" in names else names[0]
+            if "atlas_country_pick" not in st.session_state:
+                st.session_state["atlas_country_pick"] = default_name
+            elif st.session_state["atlas_country_pick"] not in names:
+                st.session_state["atlas_country_pick"] = default_name
+
+            names_by_iso = atlas_df.set_index("iso_a3")["name_fr"].to_dict()
+            for pt in _atlas_plotly_selection_points(atlas_map_event):
+                if not isinstance(pt, dict):
+                    continue
+                iso = pt.get("location")
+                if not iso and isinstance(pt.get("customdata"), (list, tuple)) and pt["customdata"]:
+                    iso = pt["customdata"][0]
+                if not iso:
+                    pidx = pt.get("point_index")
+                    if pidx is None:
+                        pidx = pt.get("pointNumber")
+                    if isinstance(pidx, int) and 0 <= pidx < len(atlas_df):
+                        iso = atlas_df.iloc[pidx]["iso_a3"]
+                if iso and iso in names_by_iso:
+                    st.session_state["atlas_country_pick"] = names_by_iso[iso]
+                    break
+
             selected_name = st.selectbox(
                 "Pays ou territoire — fiche détaillée",
                 options=names,
-                index=default_ix,
                 key="atlas_country_pick",
-                help="Sélectionne un pays pour afficher le résumé, les liens officiels et les articles RSS associés.",
+                on_change=_on_atlas_country_selectbox_changed,
+                help="Sélectionne un pays pour afficher le résumé, les liens officiels et les articles RSS associés. Clic sur la carte : même effet (sélection Plotly).",
             )
             row = atlas_df.loc[atlas_df["name_fr"] == selected_name].iloc[0]
             kws = row.get("keywords") or []
@@ -2407,6 +2552,12 @@ with tab_news:
                 kws = [kws]
 
             st.markdown(f"### {row['name_fr']} ({row['iso_a3']})")
+            eff_d = row.get("atlas_scores_effective_date")
+            src_d = row.get("atlas_scores_source")
+            if eff_d or src_d:
+                st.caption(
+                    f"Indices carte — date d'effet : **{eff_d or 'n/a'}** · source : {src_d or 'n/a'}"
+                )
             st.markdown(row.get("summary_fr") or "")
 
             st.markdown("#### Sites officiels & régulateurs")
@@ -2480,8 +2631,8 @@ with tab_method:
         - **CoinGecko (public API)** — cours, capitalisations, volumes, offre, catégories, métadonnées riches (origine, communauté, GitHub).
         - **DefiLlama (`stablecoins.llama.fi`)** — capitalisations, mécanismes, chaînes, historique des stablecoins.
         - **Yahoo Finance (via `yfinance`)** — benchmarks (`GLD`, `BLOK`) et suivi du peg des stablecoins (`USDT-USD`, `USDC-USD`, …).
-        - **Flux RSS** — **Actu** : CoinDesk, Cointelegraph, Bitcoin Magazine. **Réglementation** : SEC, ESMA, BCE (ECB), FCA.
-        - **Atlas réglementaire** — fichier `regulatory_atlas.json` : indices géographiques **pédagogiques** (non juridiques) et liens institutionnels ; à enrichir pour couvrir davantage de zones.
+        - **Flux RSS** — **Actu** : CoinDesk, Cointelegraph, Bitcoin Magazine. **Réglementation** : SEC, ESMA, BCE, FCA, AMF (flux RSS AMF), ABE (EBA), Bank of England.
+        - **Atlas réglementaire** — `regulatory_atlas.json` (pays, textes, liens, mots-clés) + `data/regulatory_atlas_scores.csv` (indices 0–100 versionnés par date d'effet et citation de source) ; non juridique.
 
         Tout est gratuit, sans clé API. CoinGecko applique un plafond de requêtes : un message d'erreur 429
         peut apparaître temporairement, il suffit de rafraîchir quelques secondes plus tard.
