@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import time as time_module
 from datetime import date, datetime, time, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import feedparser
@@ -21,12 +23,24 @@ DEFILLAMA_STABLES = "https://stablecoins.llama.fi/stablecoins"
 DEFILLAMA_STABLE_CHARTS = "https://stablecoins.llama.fi/stablecoincharts/all"
 DEFAULT_ASSET = "bitcoin"
 
-NEWS_FEEDS = {
+CRYPTO_NEWS_FEEDS = {
     "Crypto — CoinDesk": "https://www.coindesk.com/arc/outboundfeeds/rss/",
     "Crypto — Cointelegraph": "https://cointelegraph.com/rss",
     "Crypto — Bitcoin Magazine": "https://bitcoinmagazine.com/.rss/full/",
+}
+REGULATORY_NEWS_FEEDS = {
     "Régulation — SEC": "https://www.sec.gov/news/pressreleases.rss",
     "Régulation — ESMA": "https://www.esma.europa.eu/rss.xml",
+    "Régulation — ECB": "https://www.ecb.europa.eu/rss/press.html",
+    "Régulation — FCA (Royaume-Uni)": "https://www.fca.org.uk/news/rss",
+}
+NEWS_FEEDS_ALL: dict[str, str] = {**CRYPTO_NEWS_FEEDS, **REGULATORY_NEWS_FEEDS}
+
+ATLAS_METRIC_COLUMNS: dict[str, tuple[str, str]] = {
+    "Avancée du cadre crypto (licences, MiCA-style)": ("crypto_framework", "Indice illustratif 0–100 : clarté du cadre, licences et supervision des actifs numériques."),
+    "Initiative stablecoin État / banque centrale": ("state_stablecoin", "Indice illustratif 0–100 : projets publics, pilotes CBDC, encadrement des stablecoins par la banque centrale."),
+    "Stablecoins & banques commerciales": ("bank_stablecoin", "Indice illustratif 0–100 : pilotes bancaires, tokenisation des dépôts, partenariats public-privé."),
+    "Stade retail CBDC (recherche & pilotes)": ("retail_cbdc", "Indice illustratif 0–100 : avancement des travaux sur une monnaie digitale de banque centrale pour le grand public."),
 }
 BENCHMARKS = {
     "Or — proxy ETF GLD": "GLD",
@@ -391,12 +405,19 @@ def get_benchmark(symbol: str, start: date, end: date) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=900, show_spinner=False)
-def get_news() -> pd.DataFrame:
+def get_news(strand: str | None = None) -> pd.DataFrame:
+    """Charge les flux RSS. Paramètre strand : \"crypto\", \"regulation\" ou None pour tout fusionner."""
+    if strand == "crypto":
+        feeds = CRYPTO_NEWS_FEEDS
+    elif strand == "regulation":
+        feeds = REGULATORY_NEWS_FEEDS
+    else:
+        feeds = NEWS_FEEDS_ALL
     articles: list[dict[str, Any]] = []
-    for source, url in NEWS_FEEDS.items():
+    for source, url in feeds.items():
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:12]:
+            for entry in feed.entries[:14]:
                 published = entry.get("published") or entry.get("updated") or ""
                 articles.append(
                     {
@@ -410,6 +431,23 @@ def get_news() -> pd.DataFrame:
         except Exception:
             continue
     return pd.DataFrame(articles)
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_regulatory_atlas() -> list[dict[str, Any]]:
+    path = Path(__file__).resolve().parent / "regulatory_atlas.json"
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def news_matches_any_keyword(row: pd.Series, keywords: list[str]) -> bool:
+    blob = f"{row.get('title', '')} {row.get('summary', '')}".lower()
+    return any(str(kw).lower() in blob for kw in keywords if kw)
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -1223,7 +1261,7 @@ tab_market, tab_stables, tab_asset, tab_compare, tab_flows, tab_news, tab_method
         "Fiche crypto",
         "Comparaisons",
         "Flux & cycles",
-        "Actualités & Réglementation",
+        "Actu & Réglementation",
         "Méthode & limites",
     ]
 )
@@ -2264,33 +2302,153 @@ with tab_flows:
         st.warning(f"Catégories indisponibles : {exc}")
 
 with tab_news:
-    st.subheader("Actualités & Réglementation")
-    news_query = st.text_input(
-        "Filtrer les articles",
-        placeholder="Ex. ETF, MiCA, SEC, stablecoin, AMF, BCE…",
-        help="Filtrage texte (insensible à la casse) sur titre, résumé et source.",
-    )
-    try:
-        news = get_news()
-        if news.empty:
-            st.info("Aucun article disponible pour le moment.")
+    st.subheader("Actu & réglementation")
+    sub_actu, sub_reg = st.tabs(["Actu crypto", "Réglementation — atlas par zone"])
+
+    with sub_actu:
+        news_query = st.text_input(
+            "Filtrer les articles (actu)",
+            key="news_filter_actu",
+            placeholder="Ex. ETF, Solana, halving, exchange…",
+            help="Filtrage texte (insensible à la casse) sur titre, résumé et source — flux CoinDesk, Cointelegraph, Bitcoin Magazine.",
+        )
+        try:
+            news = get_news("crypto")
+            if news.empty:
+                st.info("Aucun article disponible pour le moment.")
+            else:
+                visible = news[news.apply(article_matches, axis=1, query=news_query)].head(45)
+                for _, row in visible.iterrows():
+                    summary = str(row.get("summary", ""))
+                    summary_short = summary[:380] + ("…" if len(summary) > 380 else "")
+                    st.markdown(
+                        f"""
+                        <div class="co-news">
+                          <a href="{row['link']}" target="_blank">{row['title']}</a>
+                          <div class="meta">{row['source']} — {row['published']}</div>
+                          <div style="margin-top: 0.4rem; color: var(--co-text);">{summary_short}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+        except Exception as exc:
+            st.warning(f"Flux RSS indisponibles : {exc}")
+
+    with sub_reg:
+        st.markdown(
+            "**Réglementation** : vue géographique indicative. Les scores sur la carte sont des **indices qualitatifs 0–100** "
+            "(non officiels) pour comparer visuellement les juridictions ; ils ne remplacent pas l'avis juridique. "
+            "Les liens ci-dessous pointent vers des **sites institutionnels** à consulter pour toute décision."
+        )
+        with st.expander("ℹ️ Méthode de l'atlas", expanded=False):
+            st.markdown(
+                """
+                - **Carte** : chaque pays du fichier `regulatory_atlas.json` est coloré selon la dimension choisie (cadre crypto, stablecoin public, banques, CBDC retail).
+                - **Articles** : croisement des flux **SEC, ESMA, ECB, FCA** + filtre par mots-clés liés au pays (nom, régulateurs cités dans la fiche).
+                - **Évolution** : enrichis le JSON pour ajouter des pays, des liens officiels et des mots-clés ; les scores restent éditoriaux jusqu'à branchement sur une base juridique structurée.
+                """
+            )
+
+        atlas_rows = load_regulatory_atlas()
+        if not atlas_rows:
+            st.warning(
+                "Fichier `regulatory_atlas.json` introuvable ou vide. Ajoute-le à la racine du projet pour activer la carte."
+            )
         else:
-            visible = news[news.apply(article_matches, axis=1, query=news_query)].head(40)
-            for _, row in visible.iterrows():
-                summary = str(row.get("summary", ""))
-                summary_short = summary[:380] + ("…" if len(summary) > 380 else "")
-                st.markdown(
-                    f"""
-                    <div class="co-news">
-                      <a href="{row['link']}" target="_blank">{row['title']}</a>
-                      <div class="meta">{row['source']} — {row['published']}</div>
-                      <div style="margin-top: 0.4rem; color: var(--co-text);">{summary_short}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-    except Exception as exc:
-        st.warning(f"Flux RSS indisponibles : {exc}")
+            atlas_df = pd.DataFrame(atlas_rows)
+            metric_choice = st.selectbox(
+                "Colorer la carte selon",
+                options=list(ATLAS_METRIC_COLUMNS.keys()),
+                key="atlas_metric_choice",
+                help="Choisis la dimension affichée en dégradé de couleur (indices 0–100, à titre pédagogique).",
+            )
+            col_name, col_help = ATLAS_METRIC_COLUMNS[metric_choice]
+            st.caption(col_help)
+
+            map_fig = px.choropleth(
+                atlas_df,
+                locations="iso_a3",
+                color=col_name,
+                locationmode="ISO-3",
+                hover_name="name_fr",
+                hover_data={col_name: True, "iso_a3": True},
+                color_continuous_scale=["#0f172a", "#1d4ed8", "#38bdf8", "#7dd3fc"],
+                range_color=(0, 100),
+            )
+            map_fig.update_geos(
+                showcountries=True,
+                countrycolor="rgba(148,163,184,0.28)",
+                landcolor="rgba(15,23,42,0.92)",
+                bgcolor="rgba(0,0,0,0)",
+                projection_type="natural earth",
+                showocean=True,
+                oceancolor="rgba(6,11,24,0.95)",
+            )
+            apply_plotly_style(
+                map_fig,
+                title=f"Atlas réglementaire — {metric_choice}",
+                legend_below=False,
+            )
+            map_fig.update_layout(coloraxis_colorbar=dict(title=dict(text="Indice 0–100", font=dict(color="#cbd5e1")), tickfont=dict(color="#cbd5e1")))
+            st.plotly_chart(map_fig, width="stretch", config=PLOTLY_CONFIG)
+
+            names = atlas_df["name_fr"].tolist()
+            default_ix = names.index("France") if "France" in names else 0
+            selected_name = st.selectbox(
+                "Pays ou territoire — fiche détaillée",
+                options=names,
+                index=default_ix,
+                key="atlas_country_pick",
+                help="Sélectionne un pays pour afficher le résumé, les liens officiels et les articles RSS associés.",
+            )
+            row = atlas_df.loc[atlas_df["name_fr"] == selected_name].iloc[0]
+            kws = row.get("keywords") or []
+            if isinstance(kws, str):
+                kws = [kws]
+
+            st.markdown(f"### {row['name_fr']} ({row['iso_a3']})")
+            st.markdown(row.get("summary_fr") or "")
+
+            st.markdown("#### Sites officiels & régulateurs")
+            links = row.get("links") or []
+            if isinstance(links, list) and links:
+                for link in links:
+                    if not isinstance(link, dict):
+                        continue
+                    lab = link.get("label", "Lien")
+                    url = link.get("url", "#")
+                    typ = link.get("type", "")
+                    st.markdown(f"- **{typ}** — [{lab}]({url})")
+            else:
+                st.caption("Aucun lien renseigné pour cette entrée.")
+
+            st.markdown("#### Articles (flux réglementaires + rappel actu)")
+            try:
+                reg_news = get_news("regulation")
+                crypto_news = get_news("crypto")
+                merged = pd.concat([reg_news, crypto_news], ignore_index=True)
+                merged = merged.drop_duplicates(subset=["link"], keep="first")
+                matched = merged[merged.apply(lambda r: news_matches_any_keyword(r, list(kws)), axis=1)]
+                extra = merged[merged.apply(article_matches, axis=1, query=selected_name)]
+                combined = pd.concat([matched, extra], ignore_index=True).drop_duplicates(subset=["link"]).head(35)
+                if combined.empty:
+                    st.info("Aucun article ne correspond encore aux mots-clés de ce pays — élargis les `keywords` dans `regulatory_atlas.json`.")
+                else:
+                    for _, article in combined.iterrows():
+                        summary = str(article.get("summary", ""))
+                        summary_short = summary[:320] + ("…" if len(summary) > 320 else "")
+                        st.markdown(
+                            f"""
+                            <div class="co-news">
+                              <a href="{article['link']}" target="_blank">{article['title']}</a>
+                              <div class="meta">{article['source']} — {article['published']}</div>
+                              <div style="margin-top: 0.35rem; color: var(--co-text);">{summary_short}</div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+            except Exception as exc:
+                st.warning(f"Lecture des flux pour ce pays impossible : {exc}")
 
 with tab_method:
     st.subheader("Méthode, sources et limites")
@@ -2322,7 +2480,8 @@ with tab_method:
         - **CoinGecko (public API)** — cours, capitalisations, volumes, offre, catégories, métadonnées riches (origine, communauté, GitHub).
         - **DefiLlama (`stablecoins.llama.fi`)** — capitalisations, mécanismes, chaînes, historique des stablecoins.
         - **Yahoo Finance (via `yfinance`)** — benchmarks (`GLD`, `BLOK`) et suivi du peg des stablecoins (`USDT-USD`, `USDC-USD`, …).
-        - **Flux RSS publics** — CoinDesk, Cointelegraph, Bitcoin Magazine, SEC, ESMA.
+        - **Flux RSS** — **Actu** : CoinDesk, Cointelegraph, Bitcoin Magazine. **Réglementation** : SEC, ESMA, BCE (ECB), FCA.
+        - **Atlas réglementaire** — fichier `regulatory_atlas.json` : indices géographiques **pédagogiques** (non juridiques) et liens institutionnels ; à enrichir pour couvrir davantage de zones.
 
         Tout est gratuit, sans clé API. CoinGecko applique un plafond de requêtes : un message d'erreur 429
         peut apparaître temporairement, il suffit de rafraîchir quelques secondes plus tard.

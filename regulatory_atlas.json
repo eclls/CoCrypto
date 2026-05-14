@@ -1,0 +1,303 @@
+[
+  {
+    "iso_a3": "USA",
+    "name_fr": "États-Unis",
+    "keywords": ["United States", "U.S.", "USA", "SEC", "Treasury", "CFPB", "Federal Reserve", "Fed", "Wyoming", "CFTC", "White House"],
+    "crypto_framework": 78,
+    "state_stablecoin": 58,
+    "bank_stablecoin": 72,
+    "retail_cbdc": 38,
+    "summary_fr": "**Vue d'ensemble.** Marché le plus liquide ; cadre fédéral fragmenté entre SEC, CFTC et législations d'États. Les stablecoins et les plateformes d'échange font l'objet d'enquêtes et de règles de conformité renforcées. Un **dollar numérique de détail** reste en phase d'études et de pilotes au niveau de la Réserve fédérale.",
+    "links": [
+      {"label": "SEC — Securities and Exchange Commission", "url": "https://www.sec.gov/", "type": "Régulateur"},
+      {"label": "U.S. Department of the Treasury", "url": "https://home.treasury.gov/", "type": "Gouvernement"},
+      {"label": "Federal Reserve — politique monétaire & paiements", "url": "https://www.federalreserve.gov/", "type": "Banque centrale"},
+      {"label": "CFTC — produits dérivés", "url": "https://www.cftc.gov/", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "GBR",
+    "name_fr": "Royaume-Uni",
+    "keywords": ["UK", "United Kingdom", "Britain", "FCA", "Bank of England", "HM Treasury", "London"],
+    "crypto_framework": 74,
+    "state_stablecoin": 42,
+    "bank_stablecoin": 68,
+    "retail_cbdc": 52,
+    "summary_fr": "**Vue d'ensemble.** Régime post-Brexit ; la **FCA** supervise les promotions financières et l'enregistrement des acteurs crypto. La **Bank of England** pilote le projet de **livre numérique pour entreprises** (wholesale CBDC) et des travaux sur la monnaie de détail.",
+    "links": [
+      {"label": "FCA — Financial Conduct Authority", "url": "https://www.fca.org.uk/", "type": "Régulateur"},
+      {"label": "Bank of England", "url": "https://www.bankofengland.co.uk/", "type": "Banque centrale"},
+      {"label": "HM Treasury", "url": "https://www.gov.uk/government/organisations/hm-treasury", "type": "Gouvernement"}
+    ]
+  },
+  {
+    "iso_a3": "DEU",
+    "name_fr": "Allemagne",
+    "keywords": ["Germany", "BaFin", "Bundesbank", "MiCA", "EU", "Berlin", "Frankfurt"],
+    "crypto_framework": 82,
+    "state_stablecoin": 48,
+    "bank_stablecoin": 65,
+    "retail_cbdc": 45,
+    "summary_fr": "**Vue d'ensemble.** **BaFin** délivre des autorisations pour les services crypto ; le cadre européen **MiCA** s'applique pleinement. La **Bundesbank** participe aux travaux Eurosystem sur le **digital euro**.",
+    "links": [
+      {"label": "BaFin", "url": "https://www.bafin.de/", "type": "Régulateur"},
+      {"label": "Bundesbank", "url": "https://www.bundesbank.de/", "type": "Banque centrale"},
+      {"label": "Ministère fédéral des Finances (BMF)", "url": "https://www.bundesfinanzministerium.de/", "type": "Gouvernement"}
+    ]
+  },
+  {
+    "iso_a3": "FRA",
+    "name_fr": "France",
+    "keywords": ["France", "AMF", "ACPR", "Banque de France", "MiCA", "Paris", "Trésor"],
+    "crypto_framework": 80,
+    "state_stablecoin": 46,
+    "bank_stablecoin": 62,
+    "retail_cbdc": 48,
+    "summary_fr": "**Vue d'ensemble.** **AMF** (marchés financiers) et **ACPR** (banque & assurance) encadrent les acteurs ; enregistrement **PSAN** pour les prestataires de services sur actifs numériques. La **Banque de France** contribue au **digital euro** et surveille la stabilité financière liée aux stablecoins.",
+    "links": [
+      {"label": "AMF — Autorité des marchés financiers", "url": "https://www.amf-france.fr/", "type": "Régulateur"},
+      {"label": "ACPR — Autorité de contrôle prudentiel", "url": "https://acpr.banque-france.fr/", "type": "Régulateur"},
+      {"label": "Banque de France", "url": "https://www.banque-france.fr/", "type": "Banque centrale"},
+      {"label": "Ministère de l'Économie", "url": "https://www.economie.gouv.fr/", "type": "Gouvernement"}
+    ]
+  },
+  {
+    "iso_a3": "ITA",
+    "name_fr": "Italie",
+    "keywords": ["Italy", "CONSOB", "Banca d'Italia", "MiCA", "Rome"],
+    "crypto_framework": 76,
+    "state_stablecoin": 40,
+    "bank_stablecoin": 58,
+    "retail_cbdc": 44,
+    "summary_fr": "**Vue d'ensemble.** **CONSOB** supervise l'information aux investisseurs ; **Banca d'Italia** applique le cadre prudentiel et participe au digital euro. MiCA harmonise les règles européennes.",
+    "links": [
+      {"label": "CONSOB", "url": "https://www.consob.it/", "type": "Régulateur"},
+      {"label": "Banca d'Italia", "url": "https://www.bancaditalia.it/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "ESP",
+    "name_fr": "Espagne",
+    "keywords": ["Spain", "CNMV", "Banco de España", "MiCA", "Madrid"],
+    "crypto_framework": 75,
+    "state_stablecoin": 38,
+    "bank_stablecoin": 55,
+    "retail_cbdc": 42,
+    "summary_fr": "**Vue d'ensemble.** **CNMV** et **Banco de España** publient des alertes et encadrent les publicités crypto ; transposition de MiCA en cours selon le calendrier européen.",
+    "links": [
+      {"label": "CNMV", "url": "https://www.cnmv.es/", "type": "Régulateur"},
+      {"label": "Banco de España", "url": "https://www.bde.es/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "NLD",
+    "name_fr": "Pays-Bas",
+    "keywords": ["Netherlands", "AFM", "DNB", "Amsterdam", "MiCA"],
+    "crypto_framework": 79,
+    "state_stablecoin": 44,
+    "bank_stablecoin": 64,
+    "retail_cbdc": 46,
+    "summary_fr": "**Vue d'ensemble.** **AFM** et **De Nederlandsche Bank** ont été parmi les premiers régulateurs européens à durcir les messages sur la conformité marketing ; pays pivot pour les stablecoins euro.",
+    "links": [
+      {"label": "AFM — Autoriteit Financiële Markten", "url": "https://www.afm.nl/", "type": "Régulateur"},
+      {"label": "De Nederlandsche Bank", "url": "https://www.dnb.nl/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "BEL",
+    "name_fr": "Belgique",
+    "keywords": ["Belgium", "FSMA", "CBR", "Brussels", "MiCA"],
+    "crypto_framework": 74,
+    "state_stablecoin": 36,
+    "bank_stablecoin": 54,
+    "retail_cbdc": 40,
+    "summary_fr": "**Vue d'ensemble.** **FSMA** informe les investisseurs et surveille les offres ; cadre européen MiCA et participation à la BCE pour le digital euro.",
+    "links": [
+      {"label": "FSMA", "url": "https://www.fsma.be/", "type": "Régulateur"},
+      {"label": "National Bank of Belgium", "url": "https://www.nbb.be/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "CHE",
+    "name_fr": "Suisse",
+    "keywords": ["Switzerland", "FINMA", "SNB", "Bern", "Zurich", "DLT"],
+    "crypto_framework": 85,
+    "state_stablecoin": 35,
+    "bank_stablecoin": 78,
+    "retail_cbdc": 28,
+    "summary_fr": "**Vue d'ensemble.** Cadre **technologiquement neutre** avec licences FINMA (banques crypto, émetteurs de stablecoins). La **SNB** expérimente la partie wholesale de la **monnaie digitale de banque centrale** ; peu de projets de stablecoin d'État comparés aux initiatives privées.",
+    "links": [
+      {"label": "FINMA", "url": "https://www.finma.ch/", "type": "Régulateur"},
+      {"label": "Banque nationale suisse (SNB)", "url": "https://www.snb.ch/", "type": "Banque centrale"},
+      {"label": "Département fédéral des finances", "url": "https://www.efd.admin.ch/", "type": "Gouvernement"}
+    ]
+  },
+  {
+    "iso_a3": "CAN",
+    "name_fr": "Canada",
+    "keywords": ["Canada", "OSC", "CSA", "OSFI", "Bank of Canada", "Ottawa", "Toronto"],
+    "crypto_framework": 72,
+    "state_stablecoin": 50,
+    "bank_stablecoin": 60,
+    "retail_cbdc": 55,
+    "summary_fr": "**Vue d'ensemble.** Approche coordonnée des **OSC** (provincial) ; **Banque du Canada** sur le **dollar numérique** ; stablecoins surveillés dans le cadre des lois sur les valeurs mobilières et le paiement.",
+    "links": [
+      {"label": "Bank of Canada", "url": "https://www.bankofcanada.ca/", "type": "Banque centrale"},
+      {"label": "Gouvernement du Canada — Finances", "url": "https://www.canada.ca/fr/ministere-finances.html", "type": "Gouvernement"},
+      {"label": "Sûreté des investissements (CSA / OSC)", "url": "https://www.securities-administrators.ca/", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "AUS",
+    "name_fr": "Australie",
+    "keywords": ["Australia", "ASIC", "RBA", "Canberra", "Sydney"],
+    "crypto_framework": 70,
+    "state_stablecoin": 32,
+    "bank_stablecoin": 58,
+    "retail_cbdc": 42,
+    "summary_fr": "**Vue d'ensemble.** **ASIC** encadre les produits financiers tokenisés ; **RBA** mène des recherches sur une **CBDC de détail** ; réformes en discussion sur la classification des crypto-actifs.",
+    "links": [
+      {"label": "ASIC", "url": "https://www.asic.gov.au/", "type": "Régulateur"},
+      {"label": "Reserve Bank of Australia", "url": "https://www.rba.gov.au/", "type": "Banque centrale"},
+      {"label": "Treasury (Australie)", "url": "https://treasury.gov.au/", "type": "Gouvernement"}
+    ]
+  },
+  {
+    "iso_a3": "JPN",
+    "name_fr": "Japon",
+    "keywords": ["Japan", "FSA", "JFSA", "Bank of Japan", "Tokyo", "stablecoin"],
+    "crypto_framework": 83,
+    "state_stablecoin": 48,
+    "bank_stablecoin": 66,
+    "retail_cbdc": 40,
+    "summary_fr": "**Vue d'ensemble.** Première juridiction à encadrer les **stablecoins** comme transférables (émetteurs agréés). **FSA** supervise les exchanges ; **BoJ** pilote des expérimentations CBDC.",
+    "links": [
+      {"label": "FSA — Services financiers", "url": "https://www.fsa.go.jp/", "type": "Régulateur"},
+      {"label": "Bank of Japan", "url": "https://www.boj.or.jp/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "SGP",
+    "name_fr": "Singapour",
+    "keywords": ["Singapore", "MAS", "Monetary Authority"],
+    "crypto_framework": 88,
+    "state_stablecoin": 52,
+    "bank_stablecoin": 80,
+    "retail_cbdc": 35,
+    "summary_fr": "**Vue d'ensemble.** **MAS** : cadre de licences **PSA** pour les prestataires de paiement numérique et stablecoins ; hub régional pour les pilotes bancaires et fintech.",
+    "links": [
+      {"label": "MAS — Monetary Authority of Singapore", "url": "https://www.mas.gov.sg/", "type": "Régulateur & BC"}
+    ]
+  },
+  {
+    "iso_a3": "ARE",
+    "name_fr": "Émirats arabes unis",
+    "keywords": ["UAE", "Emirates", "VARA", "Dubai", "ADGM", "DFSA"],
+    "crypto_framework": 81,
+    "state_stablecoin": 62,
+    "bank_stablecoin": 75,
+    "retail_cbdc": 30,
+    "summary_fr": "**Vue d'ensemble.** **VARA** à Dubai et zones franches financières (**ADGM**, **DIFC**) attirent émetteurs de stablecoins et exchanges ; initiatives publiques sur les paiements digitaux.",
+    "links": [
+      {"label": "VARA — Virtual Assets Regulatory Authority (Dubai)", "url": "https://vara.ae/", "type": "Régulateur"},
+      {"label": "Central Bank of the UAE", "url": "https://www.centralbank.ae/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "IND",
+    "name_fr": "Inde",
+    "keywords": ["India", "RBI", "SEBI", "New Delhi", "Mumbai"],
+    "crypto_framework": 62,
+    "state_stablecoin": 55,
+    "bank_stablecoin": 48,
+    "retail_cbdc": 68,
+    "summary_fr": "**Vue d'ensemble.** **RBI** impose des contraintes fortes sur les banques vis-à-vis de la crypto ; pilote **e-rupee** (retail CBDC). Cadre fiscal et législatif encore en évolution.",
+    "links": [
+      {"label": "Reserve Bank of India", "url": "https://www.rbi.org.in/", "type": "Banque centrale"},
+      {"label": "SEBI", "url": "https://www.sebi.gov.in/", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "BRA",
+    "name_fr": "Brésil",
+    "keywords": ["Brazil", "CVM", "BCB", "Brasília", "Rio", "Pix"],
+    "crypto_framework": 68,
+    "state_stablecoin": 44,
+    "bank_stablecoin": 52,
+    "retail_cbdc": 58,
+    "summary_fr": "**Vue d'ensemble.** **BCB** supervise les moyens de paiement et les pilotes de **Real digital** ; **CVM** sur les instruments financiers tokenisés.",
+    "links": [
+      {"label": "Banco Central do Brasil", "url": "https://www.bcb.gov.br/", "type": "Banque centrale"},
+      {"label": "CVM", "url": "https://www.gov.br/cvm/", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "ZAF",
+    "name_fr": "Afrique du Sud",
+    "keywords": ["South Africa", "FSCA", "SARB", "Pretoria", "Johannesburg"],
+    "crypto_framework": 65,
+    "state_stablecoin": 28,
+    "bank_stablecoin": 45,
+    "retail_cbdc": 32,
+    "summary_fr": "**Vue d'ensemble.** **FSCA** a déclaré les crypto-actifs comme produits financiers ; **SARB** sur la stabilité monétaire et les CBDC.",
+    "links": [
+      {"label": "FSCA", "url": "https://www.fsca.co.za/", "type": "Régulateur"},
+      {"label": "South African Reserve Bank", "url": "https://www.resbank.co.za/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "MEX",
+    "name_fr": "Mexique",
+    "keywords": ["Mexico", "CNBV", "Banxico", "Mexico City"],
+    "crypto_framework": 60,
+    "state_stablecoin": 35,
+    "bank_stablecoin": 42,
+    "retail_cbdc": 38,
+    "summary_fr": "**Vue d'ensemble.** **Banxico** et **CNBV** encadrent les fintech et les risques de paiement ; discussion sur cadre pour actifs virtuels.",
+    "links": [
+      {"label": "Banxico", "url": "https://www.banxico.org.mx/", "type": "Banque centrale"},
+      {"label": "CNBV", "url": "https://www.gob.mx/cnbv", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "KOR",
+    "name_fr": "Corée du Sud",
+    "keywords": ["Korea", "FSC", "FSS", "Seoul", "Bank of Korea"],
+    "crypto_framework": 76,
+    "state_stablecoin": 40,
+    "bank_stablecoin": 68,
+    "retail_cbdc": 48,
+    "summary_fr": "**Vue d'ensemble.** Cadre strict sur les exchanges et la protection des investisseurs ; banques commerciales impliquées dans des consortiums blockchain ; **Bank of Korea** sur CBDC.",
+    "links": [
+      {"label": "FSC — Financial Services Commission", "url": "https://www.fsc.go.kr/", "type": "Régulateur"},
+      {"label": "Bank of Korea", "url": "https://www.bok.or.kr/", "type": "Banque centrale"}
+    ]
+  },
+  {
+    "iso_a3": "LUX",
+    "name_fr": "Luxembourg",
+    "keywords": ["Luxembourg", "CSSF", "MiCA", "EU"],
+    "crypto_framework": 77,
+    "state_stablecoin": 42,
+    "bank_stablecoin": 70,
+    "retail_cbdc": 44,
+    "summary_fr": "**Vue d'ensemble.** Place financière ; **CSSF** agrée des acteurs DLT et fonds tokenisés ; MiCA s'applique comme dans tout l'EEE.",
+    "links": [
+      {"label": "CSSF", "url": "https://www.cssf.lu/", "type": "Régulateur"}
+    ]
+  },
+  {
+    "iso_a3": "AUT",
+    "name_fr": "Autriche",
+    "keywords": ["Austria", "FMA", "OeNB", "Vienna", "MiCA"],
+    "crypto_framework": 75,
+    "state_stablecoin": 38,
+    "bank_stablecoin": 56,
+    "retail_cbdc": 42,
+    "summary_fr": "**Vue d'ensemble.** **FMA** et **Oesterreichische Nationalbank** dans le cadre européen MiCA et BCE.",
+    "links": [
+      {"label": "FMA", "url": "https://www.fma.gv.at/", "type": "Régulateur"},
+      {"label": "OeNB", "url": "https://www.oenb.at/", "type": "Banque centrale"}
+    ]
+  }
+]
