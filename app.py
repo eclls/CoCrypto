@@ -107,17 +107,41 @@ st.markdown(
       border-right: 1px solid var(--co-border);
     }
     [data-testid="stSidebar"] * { color: var(--co-text) !important; }
-    .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: 1500px; }
+    .block-container { padding-top: 1rem; padding-bottom: 2rem; max-width: min(100%, 1680px); }
+    /* Métriques : éviter la troncature « … » sur les libellés et les valeurs (Streamlit / flex) */
     div[data-testid="stMetric"] {
       background: var(--co-panel);
       border: 1px solid var(--co-border);
       border-radius: 16px;
-      padding: 0.9rem 1rem;
+      padding: 0.85rem 0.75rem;
       box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+      overflow: visible !important;
+      min-width: 0;
     }
-    div[data-testid="stMetric"] label { color: var(--co-muted) !important; font-weight: 600; }
-    div[data-testid="stMetricValue"] { color: var(--co-text-strong) !important; }
-    div[data-testid="stMetricDelta"] { font-weight: 600; }
+    div[data-testid="stMetric"] label,
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+    div[data-testid="stMetric"] [data-testid="stMetricValue"],
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+      overflow: visible !important;
+      text-overflow: clip !important;
+      white-space: normal !important;
+      word-break: break-word;
+      max-width: none !important;
+    }
+    div[data-testid="stMetric"] label,
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+      font-size: 0.78rem !important;
+      line-height: 1.25 !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+      color: var(--co-text-strong) !important;
+      font-size: clamp(1.05rem, 1.1vw + 0.85rem, 1.45rem) !important;
+      line-height: 1.2 !important;
+    }
+    div[data-testid="stMetricDelta"] { font-weight: 600; overflow: visible !important; text-overflow: clip !important; }
+    [data-testid="column"] > div[data-testid="stVerticalBlock"] > div[data-testid="stElementContainer"] {
+      overflow: visible !important;
+    }
     .stTextInput input, .stSelectbox div[data-baseweb="select"],
     .stMultiSelect div[data-baseweb="select"], .stDateInput input {
       background: var(--co-panel-soft) !important;
@@ -1077,8 +1101,9 @@ st.markdown(
     f"""
     <div class="co-hero">
       <h1>{APP_NAME}</h1>
-      <p>Agrégateur local de la sphère crypto : cours, capitalisation, volumes, comparaisons benchmarkées,
-      cycles, flux, stablecoins, actualités et réglementation. Toutes les données sont rafraîchies via APIs publiques.</p>
+      <p>Agrégateur orienté <strong>analyse</strong> et <strong>stablecoins</strong> : cours, capitalisation, volumes,
+      pegs multi-sources, comparaisons benchmarkées, cycles, flux, actualités et réglementation.
+      Les données sont croisées (CoinGecko, DefiLlama, Yahoo Finance, RSS) — pas une simple copie d'un agrégateur unique.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -1117,43 +1142,87 @@ selected_row = markets.loc[markets["id"] == selected_id].iloc[0]
 asset_name = selected_row["name"]
 asset_symbol = selected_row["symbol"].upper()
 
-top_cols = st.columns(5)
+top_cols = st.columns([1.35, 1.12, 1.12, 0.62, 0.79])
 top_cols[0].metric(
-    f"{asset_name} ({asset_symbol})",
-    format_money(selected_row.get("current_price")),
+    asset_symbol,
+    format_money(selected_row.get("current_price"), decimals=2),
     format_pct(selected_row.get("price_change_percentage_24h")),
-    help="Cours spot agrégé multi-exchanges (USD). Variation = perf 24 h en %.",
+    help=f"{asset_name} ({asset_symbol}) — cours spot agrégé multi-exchanges (USD). Variation = perf 24 h en %.",
 )
 top_cols[1].metric(
-    "Capitalisation (USD)",
+    "Capi (USD)",
     format_money(selected_row.get("market_cap")),
     format_pct(selected_row.get("price_change_percentage_7d_in_currency")),
-    help="Capitalisation = cours × stock circulant. Variation = perf 7 j en %.",
+    help="Capitalisation = cours × stock circulant. Variation affichée = perf 7 j en %.",
 )
 top_cols[2].metric(
-    "Volume 24 h (USD)",
+    "Vol. 24 h (USD)",
     format_money(selected_row.get("total_volume")),
     format_pct(selected_row.get("price_change_percentage_1h_in_currency")),
     help="Volume d'échange agrégé sur 24 h en USD. Variation = perf 1 h en %.",
 )
 top_cols[3].metric(
-    "Rang capi",
+    "Rang",
     f"#{int(selected_row.get('market_cap_rank'))}" if not pd.isna(selected_row.get("market_cap_rank")) else "n/a",
-    help="Classement de l'actif par capitalisation parmi les cryptos suivies par CoinGecko.",
+    help="Rang capitalisation parmi les actifs suivis par CoinGecko.",
 )
 top_cols[4].metric(
-    "Dominance BTC",
-    format_pct(global_data.get("market_cap_percentage", {}).get("btc")),
-    help="Part de Bitcoin dans la capitalisation totale du marché crypto. Indicateur structurel de cycle.",
+    "Dom. BTC",
+    format_pct(global_data.get("market_cap_percentage", {}).get("btc"), decimals=2),
+    help="Dominance : part de Bitcoin dans la capitalisation totale du marché crypto.",
 )
 
-tab_market, tab_asset, tab_compare, tab_flows, tab_stables, tab_news, tab_method = st.tabs(
+_df_strip = get_stablecoins_defillama()
+_strip_total_mcap = float(global_data.get("total_market_cap", {}).get("usd") or 0)
+strip_cols = st.columns(4)
+if not _df_strip.empty:
+    _st_sum = float(_df_strip["Circulation (USD)"].sum())
+    _share_mkt = (_st_sum / _strip_total_mcap * 100) if _strip_total_mcap > 0 else float("nan")
+    _usdt_share = float("nan")
+    if "USDT" in _df_strip["Symbole"].values:
+        _usdt_share = float(
+            _df_strip.loc[_df_strip["Symbole"] == "USDT", "Circulation (USD)"].iloc[0]
+        ) / max(_st_sum, 1) * 100
+    strip_cols[0].metric(
+        "Stables — capi totale",
+        format_money(_st_sum),
+        help="Somme DefiLlama des stablecoins suivis (USD).",
+    )
+    strip_cols[1].metric(
+        "Stables / marché crypto",
+        format_pct(_share_mkt) if pd.notna(_share_mkt) else "n/a",
+        help="Capitalisation stablecoins ÷ capitalisation totale crypto (CoinGecko global).",
+    )
+    strip_cols[2].metric(
+        "USDT / stables",
+        format_pct(_usdt_share) if pd.notna(_usdt_share) else "n/a",
+        help="Part de Tether dans la capitalisation stablecoins DefiLlama.",
+    )
+    _peg_df = get_stable_peg_history(days=7)
+    if not _peg_df.empty:
+        _last = _peg_df.sort_values("Date").groupby("Stablecoin").tail(1)
+        _dev_pb = ((_last["Prix (USD)"] - 1.0).abs() * 10_000).max()
+        strip_cols[3].metric(
+            "Peg — écart max (7 j)",
+            f"{float(_dev_pb):.1f} pb",
+            help="Plus grand écart absolu au peg 1 USD (points de base) sur les stablecoins suivis via Yahoo, 7 derniers jours.",
+        )
+    else:
+        strip_cols[3].metric("Peg — écart max (7 j)", "n/a", help="Yahoo Finance indisponible.")
+else:
+    strip_cols[0].metric("Stables — capi totale", "n/a", help="DefiLlama indisponible.")
+    strip_cols[1].metric("Stables / marché crypto", "n/a", help="—")
+    strip_cols[2].metric("USDT / stables", "n/a", help="—")
+    strip_cols[3].metric("Peg — écart max (7 j)", "n/a", help="—")
+st.caption("Bandeau stablecoins : vue synthétique DefiLlama + stress de peg court terme (Yahoo). Détail dans l'onglet *Stablecoins*.")
+
+tab_market, tab_stables, tab_asset, tab_compare, tab_flows, tab_news, tab_method = st.tabs(
     [
         "Marché",
+        "Stablecoins",
         "Fiche crypto",
         "Comparaisons",
         "Flux & cycles",
-        "Stablecoins",
         "Actualités & Réglementation",
         "Méthode & limites",
     ]
@@ -1391,6 +1460,376 @@ with tab_market:
                 )
                 st.plotly_chart(tm, width="stretch", config=PLOTLY_CONFIG)
 
+
+with tab_stables:
+    st.subheader("Stablecoins — capitalisation, peg, mécanismes")
+    with st.expander("ℹ️ Données et limites", expanded=False):
+        st.markdown(
+            "- **Sources** : DefiLlama (capitalisations, peg, mécanisme, chaînes) + Yahoo Finance (suivi de peg quotidien via tickers USD).\n"
+            "- **Peg deviation** : écart à 1 USD ; au-delà de quelques dizaines de points de base, c'est un signal de stress de peg.\n"
+            "- **Mécanisme** : *Fiat-backed* (réserves bancaires), *Crypto-backed* (sur-collatéralisé), *Algorithmic* (offre/demande), *Hybrid*.\n"
+            "- Les valeurs sont déclarées par les émetteurs ou estimées par les agrégateurs : marge d'erreur inévitable."
+        )
+
+    df_llama = get_stablecoins_defillama()
+    if df_llama.empty:
+        st.info("Données DefiLlama momentanément indisponibles. Repli sur CoinGecko ci-dessous.")
+        try:
+            stable_rows = request_json(
+                f"{COINGECKO}/coins/markets",
+                {
+                    "vs_currency": "usd",
+                    "category": "stablecoins",
+                    "order": "market_cap_desc",
+                    "per_page": 80,
+                    "page": 1,
+                    "sparkline": "false",
+                    "price_change_percentage": "24h,7d,30d",
+                },
+            )
+            df_fallback = pd.DataFrame(stable_rows)
+        except Exception as exc:
+            df_fallback = pd.DataFrame()
+            st.warning(f"Repli CoinGecko également indisponible ({exc}).")
+        if not df_fallback.empty:
+            kpis = st.columns(3)
+            kpis[0].metric("Capitalisation stablecoins (USD)", format_money(df_fallback["market_cap"].sum()))
+            kpis[1].metric("Volume 24 h stablecoins (USD)", format_money(df_fallback["total_volume"].sum()))
+            kpis[2].metric("Stablecoins suivis (quantité)", f"{len(df_fallback)}")
+            st.dataframe(df_fallback, width="stretch", height=420, hide_index=True)
+    else:
+        kpis = st.columns(4)
+        kpis[0].metric("Capitalisation stablecoins (USD)", format_money(df_llama["Circulation (USD)"].sum()))
+        kpis[1].metric("Stablecoins suivis (quantité)", f"{len(df_llama):,}".replace(",", " "))
+        if "USDT" in df_llama["Symbole"].values:
+            usdt_mc = df_llama.loc[df_llama["Symbole"] == "USDT", "Circulation (USD)"].iloc[0]
+            kpis[2].metric("Capitalisation USDT (USD)", format_money(usdt_mc))
+        else:
+            kpis[2].metric("Capitalisation USDT (USD)", "n/a")
+        top_share = df_llama.head(3)["Circulation (USD)"].sum() / max(df_llama["Circulation (USD)"].sum(), 1) * 100
+        kpis[3].metric("Concentration top 3 (%)", format_pct(top_share), help="Part des trois premiers stablecoins dans la capitalisation totale.")
+
+        st.markdown("#### Top stablecoins (DefiLlama)")
+        st.caption(
+            "Capitalisations en USD, mécanisme et chaînes principales. La colonne *Tendance capi* est une mini-courbe "
+            "de la capitalisation sur la période d'analyse — survole-la pour voir la valeur à chaque date. La colonne "
+            "*Nombre de chaînes* indique sur combien de blockchains distinctes le stablecoin est émis (Ethereum, Tron, "
+            "BSC, Solana, Avalanche, Arbitrum, etc.)."
+        )
+        stable_id_map = get_stablecoin_id_map()
+        top_stables = df_llama.head(40).copy()
+        sparkline_data: dict[str, list[float]] = {}
+        sparkline_targets = top_stables.head(8)["Symbole"].tolist()
+        with st.spinner("Chargement des mini-courbes de tendance…"):
+            for sym in sparkline_targets:
+                cg_id = stable_id_map.get(str(sym).upper())
+                if not cg_id:
+                    continue
+                try:
+                    series = get_stable_marketcap_sparkline(cg_id, start_date, end_date)
+                except Exception:
+                    series = []
+                if series:
+                    sparkline_data[sym] = series
+        top_stables["Tendance capi"] = top_stables["Symbole"].map(sparkline_data)
+        column_order = [
+            "Symbole", "Nom", "Tendance capi", "Cours (USD)", "Circulation (USD)",
+            "Type de peg", "Mécanisme", "Nombre de chaînes", "Chaînes principales",
+        ]
+        column_order = [c for c in column_order if c in top_stables.columns]
+        st.dataframe(
+            top_stables[column_order],
+            width="stretch",
+            height=420,
+            hide_index=True,
+            column_config={
+                "Cours (USD)": st.column_config.NumberColumn("Cours (USD)", format="$ %.4f", help="Cours observé vs USD (proche de 1 si peg respecté)."),
+                "Circulation (USD)": st.column_config.NumberColumn("Circulation (USD)", format="$ %.0f", help="Valeur déclarée des unités émises."),
+                "Nombre de chaînes": st.column_config.NumberColumn(
+                    "Nombre de chaînes",
+                    format="%d",
+                    help="Nombre de blockchains distinctes sur lesquelles le stablecoin est déployé (Ethereum, Tron, Solana, BSC, Arbitrum, etc.). Une présence multi-chaînes améliore la liquidité et la résilience opérationnelle.",
+                ),
+                "Chaînes principales": st.column_config.TextColumn(
+                    "Chaînes principales",
+                    help="Cinq premières blockchains où le stablecoin est le plus présent (par circulation).",
+                ),
+                "Tendance capi": st.column_config.LineChartColumn(
+                    "Tendance capi",
+                    width="medium",
+                    help=(
+                        "Mini-graphique de la capitalisation sur la période d'analyse sélectionnée dans la barre latérale. "
+                        "Survole la sparkline pour faire apparaître la valeur ponctuelle ; pour un graphique plein écran, "
+                        "utilise le moteur de recherche « Zoom sur un stablecoin » plus bas."
+                    ),
+                ),
+            },
+        )
+
+        st.markdown("#### Parts de marché — top stablecoins")
+        share_df_full = df_llama.head(20).copy()
+        share_df_full["Part de marché (%)"] = share_df_full["Circulation (USD)"] / df_llama["Circulation (USD)"].sum() * 100
+        top_n_share = share_df_full.head(8).copy()
+        autres = share_df_full.iloc[8:]
+        if not autres.empty:
+            autres_row = pd.DataFrame(
+                [
+                    {
+                        "Symbole": "Autres",
+                        "Nom": f"{len(autres)} autres stablecoins",
+                        "Circulation (USD)": autres["Circulation (USD)"].sum(),
+                        "Part de marché (%)": autres["Part de marché (%)"].sum(),
+                    }
+                ]
+            )
+            share_pie = pd.concat([top_n_share, autres_row], ignore_index=True)
+        else:
+            share_pie = top_n_share
+        share_pie["Capitalisation (USD)"] = share_pie["Circulation (USD)"].apply(format_money)
+
+        bar_fig = px.bar(
+            share_pie.sort_values("Circulation (USD)", ascending=True),
+            x="Part de marché (%)",
+            y="Symbole",
+            orientation="h",
+            color="Part de marché (%)",
+            color_continuous_scale=["#1e3a8a", "#2563eb", "#38bdf8", "#bae6fd"],
+            text="Part de marché (%)",
+            custom_data=["Nom", "Capitalisation (USD)"],
+        )
+        bar_fig.update_traces(
+            texttemplate="%{x:.2f} %",
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate="<b>%{y}</b><br>%{customdata[0]}<br>Part : %{x:.2f} %<br>Capitalisation : %{customdata[1]}<extra></extra>",
+        )
+        apply_plotly_style(
+            bar_fig,
+            title="Parts de marché — top 8 + agrégat « Autres »",
+            x_title="Part de la capitalisation totale (%)",
+            y_title=None,
+            legend_below=False,
+        )
+        bar_fig.update_layout(showlegend=False, coloraxis_showscale=False, height=420)
+        st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
+
+        st.markdown("##### Vue circulaire détaillée")
+        st.caption("Graphique pleine largeur : les libellés et la légende disposent de plus d'espace, ce qui évite l'empilement observé en colonne.")
+        donut_fig = px.pie(
+            share_pie,
+            names="Symbole",
+            values="Circulation (USD)",
+            hole=0.62,
+            color_discrete_sequence=["#38bdf8", "#2563eb", "#a78bfa", "#22d3ee", "#60a5fa", "#818cf8", "#f472b6", "#facc15", "#94a3b8"],
+        )
+        donut_fig.update_traces(
+            textinfo="label+percent",
+            textposition="outside",
+            textfont=dict(color="#f1f5f9", size=14),
+            marker=dict(line=dict(color="#0b1226", width=2)),
+            pull=[0.015] * len(share_pie),
+            automargin=True,
+            hovertemplate="<b>%{label}</b><br>Capitalisation : %{value:$,.0f}<br>Part : %{percent}<extra></extra>",
+        )
+        apply_plotly_style(donut_fig, title="Vue circulaire — part de capitalisation des stablecoins", legend_below=True)
+        donut_fig.update_layout(
+            height=720,
+            margin=dict(t=95, l=100, r=100, b=150),
+            uniformtext_minsize=11,
+            uniformtext_mode="hide",
+        )
+        st.plotly_chart(donut_fig, width="stretch", config=PLOTLY_CONFIG)
+
+    st.markdown("#### Suivi de peg via Yahoo Finance")
+    peg_df = get_stable_peg_history(days=45)
+    if peg_df.empty:
+        st.info("Suivi de peg via Yahoo Finance indisponible pour le moment.")
+    else:
+        peg_fig = px.line(
+            peg_df,
+            x="Date",
+            y="Prix (USD)",
+            color="Stablecoin",
+            color_discrete_sequence=["#38bdf8", "#2563eb", "#a78bfa", "#22d3ee", "#60a5fa", "#818cf8", "#f472b6"],
+        )
+        peg_fig.update_traces(line=dict(width=1.6))
+        peg_fig.add_hline(y=1.0, line=dict(color="rgba(148,163,184,0.55)", dash="dot"))
+        apply_plotly_style(peg_fig, title="Peg observé vs 1 USD — 45 derniers jours (Yahoo Finance)", y_title="Prix (USD)", x_title="Date")
+        st.plotly_chart(peg_fig, width="stretch", config=PLOTLY_CONFIG)
+
+        latest = peg_df.sort_values("Date").groupby("Stablecoin").tail(1).copy()
+        latest["Écart au peg (pb)"] = (latest["Prix (USD)"] - 1) * 10_000
+        st.markdown("##### Dernière observation par stablecoin")
+        st.dataframe(
+            latest[["Stablecoin", "Date", "Prix (USD)", "Écart au peg (pb)"]],
+            width="stretch",
+            hide_index=True,
+            column_config={
+                "Prix (USD)": st.column_config.NumberColumn("Prix (USD)", format="$ %.4f"),
+                "Écart au peg (pb)": st.column_config.NumberColumn("Écart au peg (pb)", format="%+.1f", help="Écart au peg en points de base (1 pb = 0,01 %). >100 pb = stress significatif."),
+            },
+        )
+
+    st.markdown("#### Capitalisation totale stablecoins — historique DefiLlama")
+    period_days = max((end_date - start_date).days, 30)
+    total_hist = get_stable_total_history(days=period_days)
+    if total_hist.empty:
+        st.info("Historique total DefiLlama momentanément indisponible.")
+    else:
+        total_fig = go.Figure()
+        total_fig.add_trace(
+            go.Scatter(
+                x=total_hist["Date"],
+                y=total_hist["Capitalisation totale (USD)"],
+                mode="lines",
+                fill="tozeroy",
+                line=dict(color="#38bdf8", width=2),
+                fillcolor="rgba(56, 189, 248, 0.20)",
+                name="Capitalisation totale (DefiLlama)",
+                hovertemplate="<b>Total stablecoins</b><br>%{x|%d %b %Y}<br>%{y:$,.0f}<extra></extra>",
+            )
+        )
+        apply_plotly_style(
+            total_fig,
+            title=f"Capitalisation totale des stablecoins — {period_days} derniers jours (USD)",
+            y_title="Capitalisation (USD)",
+            x_title="Date",
+        )
+        total_fig.update_layout(height=440, hovermode="x unified", showlegend=False)
+        st.plotly_chart(total_fig, width="stretch", config=PLOTLY_CONFIG)
+        st.caption(
+            "Trace la capitalisation cumulée de l'ensemble des stablecoins suivis par DefiLlama sur la période "
+            "d'analyse définie dans la barre latérale. Pour zoomer sur un stablecoin précis, utilise le moteur "
+            "de recherche ci-dessous (ou survole la mini-courbe *Tendance capi* du tableau plus haut)."
+        )
+
+    st.markdown("#### Zoom sur un stablecoin")
+    st.caption(
+        "Saisis quelques lettres pour filtrer la liste : la recherche couvre tous les stablecoins disposant d'un "
+        "historique CoinGecko. Le graphique affiche la capitalisation et le cours sur la période d'analyse sélectionnée."
+    )
+
+    detail_id_map = get_stablecoin_id_map()
+    df_llama_norm = df_llama.copy()
+    df_llama_norm["__sym"] = df_llama_norm["Symbole"].astype(str).str.upper()
+    candidates = df_llama_norm[df_llama_norm["__sym"].isin(detail_id_map.keys())].copy()
+
+    if candidates.empty and detail_id_map:
+        candidates = pd.DataFrame(
+            [
+                {"Symbole": sym, "__sym": sym, "Nom": sym, "Circulation (USD)": float("nan")}
+                for sym in detail_id_map.keys()
+            ]
+        )
+
+    if candidates.empty:
+        st.info("Aucun stablecoin avec historique CoinGecko exploitable pour le moment.")
+    else:
+        candidates["__label"] = candidates.apply(
+            lambda r: f"{r['__sym']} — {r.get('Nom') or r['__sym']}".strip(" —"),
+            axis=1,
+        )
+        candidates = candidates.drop_duplicates(subset="__label").reset_index(drop=True)
+        labels = candidates["__label"].tolist()
+        default_idx = 0
+        for i, sym in enumerate(candidates["__sym"]):
+            if sym == "USDT":
+                default_idx = i
+                break
+        selected_label = st.selectbox(
+            "Rechercher un stablecoin",
+            options=labels,
+            index=default_idx,
+            help="Recherche libre par symbole ou nom (filtrage intégré de Streamlit).",
+        )
+        row = candidates.loc[candidates["__label"] == selected_label].iloc[0]
+        selected_symbol = row["__sym"]
+        coin_id = detail_id_map.get(selected_symbol)
+        if not coin_id:
+            st.info("Identifiant CoinGecko introuvable pour ce stablecoin.")
+        else:
+            try:
+                detail_hist = get_coin_history(coin_id, start_date, end_date)
+            except Exception as exc:
+                detail_hist = pd.DataFrame()
+                st.warning(f"Historique indisponible ({exc}).")
+            if detail_hist.empty:
+                st.info("Historique indisponible pour ce stablecoin sur la période sélectionnée.")
+            else:
+                kpi_cols = st.columns(4)
+                last_cap = float(detail_hist["market_cap"].dropna().iloc[-1]) if "market_cap" in detail_hist else float("nan")
+                first_cap = float(detail_hist["market_cap"].dropna().iloc[0]) if "market_cap" in detail_hist else float("nan")
+                last_price = float(detail_hist["price"].dropna().iloc[-1]) if "price" in detail_hist else float("nan")
+                cap_change = ((last_cap / first_cap) - 1) * 100 if first_cap else float("nan")
+                kpi_cols[0].metric("Capitalisation actuelle (USD)", format_money(last_cap))
+                kpi_cols[1].metric("Capitalisation au début (USD)", format_money(first_cap))
+                kpi_cols[2].metric("Variation sur la période", format_pct(cap_change) if pd.notna(cap_change) else "n/a")
+                if pd.notna(last_price):
+                    kpi_cols[3].metric(
+                        "Cours actuel (USD)",
+                        f"$ {last_price:,.4f}".replace(",", " "),
+                        delta=f"{(last_price - 1) * 10_000:+.1f} pb vs peg" if last_price else None,
+                        help="Écart au peg exprimé en points de base (1 pb = 0,01 %).",
+                    )
+
+                detail_fig = make_subplots(
+                    rows=2,
+                    cols=1,
+                    shared_xaxes=True,
+                    vertical_spacing=0.10,
+                    row_heights=[0.62, 0.38],
+                    subplot_titles=("Capitalisation (USD)", "Cours vs 1 USD"),
+                )
+                detail_fig.add_trace(
+                    go.Scatter(
+                        x=detail_hist["date"],
+                        y=detail_hist["market_cap"],
+                        mode="lines",
+                        line=dict(color="#38bdf8", width=2),
+                        fill="tozeroy",
+                        fillcolor="rgba(56, 189, 248, 0.18)",
+                        name="Capitalisation",
+                        hovertemplate="%{x|%d %b %Y}<br>Capi : %{y:$,.0f}<extra></extra>",
+                    ),
+                    row=1,
+                    col=1,
+                )
+                detail_fig.add_trace(
+                    go.Scatter(
+                        x=detail_hist["date"],
+                        y=detail_hist["price"],
+                        mode="lines",
+                        line=dict(color="#facc15", width=1.6),
+                        name="Cours",
+                        hovertemplate="%{x|%d %b %Y}<br>Cours : %{y:$.4f}<extra></extra>",
+                    ),
+                    row=2,
+                    col=1,
+                )
+                detail_fig.add_hline(
+                    y=1.0,
+                    line=dict(color="rgba(148,163,184,0.6)", dash="dot"),
+                    row=2,
+                    col=1,
+                )
+                apply_plotly_style(
+                    detail_fig,
+                    title=f"{selected_symbol} — {row.get('Nom') or ''} ({period_days} jours)",
+                )
+                detail_fig.update_layout(
+                    height=620,
+                    hovermode="x unified",
+                    showlegend=False,
+                    margin=dict(t=90, l=70, r=40, b=60),
+                )
+                detail_fig.update_yaxes(title_text="Capitalisation (USD)", row=1, col=1)
+                detail_fig.update_yaxes(title_text="Cours (USD)", row=2, col=1)
+                detail_fig.update_xaxes(title_text="Date", row=2, col=1)
+                st.plotly_chart(detail_fig, width="stretch", config=PLOTLY_CONFIG)
+                st.caption(
+                    f"Source : CoinGecko (`{coin_id}`). La ligne pointillée à 1 USD sert de repère de peg ; "
+                    "tout écart durable au-delà de quelques dizaines de points de base est un signal de stress."
+                )
 
 with tab_asset:
     head_left, head_right = st.columns([3, 1])
@@ -1824,376 +2263,6 @@ with tab_flows:
     except Exception as exc:
         st.warning(f"Catégories indisponibles : {exc}")
 
-with tab_stables:
-    st.subheader("Stablecoins — capitalisation, peg, mécanismes")
-    with st.expander("ℹ️ Données et limites", expanded=False):
-        st.markdown(
-            "- **Sources** : DefiLlama (capitalisations, peg, mécanisme, chaînes) + Yahoo Finance (suivi de peg quotidien via tickers USD).\n"
-            "- **Peg deviation** : écart à 1 USD ; au-delà de quelques dizaines de points de base, c'est un signal de stress de peg.\n"
-            "- **Mécanisme** : *Fiat-backed* (réserves bancaires), *Crypto-backed* (sur-collatéralisé), *Algorithmic* (offre/demande), *Hybrid*.\n"
-            "- Les valeurs sont déclarées par les émetteurs ou estimées par les agrégateurs : marge d'erreur inévitable."
-        )
-
-    df_llama = get_stablecoins_defillama()
-    if df_llama.empty:
-        st.info("Données DefiLlama momentanément indisponibles. Repli sur CoinGecko ci-dessous.")
-        try:
-            stable_rows = request_json(
-                f"{COINGECKO}/coins/markets",
-                {
-                    "vs_currency": "usd",
-                    "category": "stablecoins",
-                    "order": "market_cap_desc",
-                    "per_page": 80,
-                    "page": 1,
-                    "sparkline": "false",
-                    "price_change_percentage": "24h,7d,30d",
-                },
-            )
-            df_fallback = pd.DataFrame(stable_rows)
-        except Exception as exc:
-            df_fallback = pd.DataFrame()
-            st.warning(f"Repli CoinGecko également indisponible ({exc}).")
-        if not df_fallback.empty:
-            kpis = st.columns(3)
-            kpis[0].metric("Capitalisation stablecoins (USD)", format_money(df_fallback["market_cap"].sum()))
-            kpis[1].metric("Volume 24 h stablecoins (USD)", format_money(df_fallback["total_volume"].sum()))
-            kpis[2].metric("Stablecoins suivis (quantité)", f"{len(df_fallback)}")
-            st.dataframe(df_fallback, width="stretch", height=420, hide_index=True)
-    else:
-        kpis = st.columns(4)
-        kpis[0].metric("Capitalisation stablecoins (USD)", format_money(df_llama["Circulation (USD)"].sum()))
-        kpis[1].metric("Stablecoins suivis (quantité)", f"{len(df_llama):,}".replace(",", " "))
-        if "USDT" in df_llama["Symbole"].values:
-            usdt_mc = df_llama.loc[df_llama["Symbole"] == "USDT", "Circulation (USD)"].iloc[0]
-            kpis[2].metric("Capitalisation USDT (USD)", format_money(usdt_mc))
-        else:
-            kpis[2].metric("Capitalisation USDT (USD)", "n/a")
-        top_share = df_llama.head(3)["Circulation (USD)"].sum() / max(df_llama["Circulation (USD)"].sum(), 1) * 100
-        kpis[3].metric("Concentration top 3 (%)", format_pct(top_share), help="Part des trois premiers stablecoins dans la capitalisation totale.")
-
-        st.markdown("#### Top stablecoins (DefiLlama)")
-        st.caption(
-            "Capitalisations en USD, mécanisme et chaînes principales. La colonne *Tendance capi* est une mini-courbe "
-            "de la capitalisation sur la période d'analyse — survole-la pour voir la valeur à chaque date. La colonne "
-            "*Nombre de chaînes* indique sur combien de blockchains distinctes le stablecoin est émis (Ethereum, Tron, "
-            "BSC, Solana, Avalanche, Arbitrum, etc.)."
-        )
-        stable_id_map = get_stablecoin_id_map()
-        top_stables = df_llama.head(40).copy()
-        sparkline_data: dict[str, list[float]] = {}
-        sparkline_targets = top_stables.head(8)["Symbole"].tolist()
-        with st.spinner("Chargement des mini-courbes de tendance…"):
-            for sym in sparkline_targets:
-                cg_id = stable_id_map.get(str(sym).upper())
-                if not cg_id:
-                    continue
-                try:
-                    series = get_stable_marketcap_sparkline(cg_id, start_date, end_date)
-                except Exception:
-                    series = []
-                if series:
-                    sparkline_data[sym] = series
-        top_stables["Tendance capi"] = top_stables["Symbole"].map(sparkline_data)
-        column_order = [
-            "Symbole", "Nom", "Tendance capi", "Cours (USD)", "Circulation (USD)",
-            "Type de peg", "Mécanisme", "Nombre de chaînes", "Chaînes principales",
-        ]
-        column_order = [c for c in column_order if c in top_stables.columns]
-        st.dataframe(
-            top_stables[column_order],
-            width="stretch",
-            height=420,
-            hide_index=True,
-            column_config={
-                "Cours (USD)": st.column_config.NumberColumn("Cours (USD)", format="$ %.4f", help="Cours observé vs USD (proche de 1 si peg respecté)."),
-                "Circulation (USD)": st.column_config.NumberColumn("Circulation (USD)", format="$ %.0f", help="Valeur déclarée des unités émises."),
-                "Nombre de chaînes": st.column_config.NumberColumn(
-                    "Nombre de chaînes",
-                    format="%d",
-                    help="Nombre de blockchains distinctes sur lesquelles le stablecoin est déployé (Ethereum, Tron, Solana, BSC, Arbitrum, etc.). Une présence multi-chaînes améliore la liquidité et la résilience opérationnelle.",
-                ),
-                "Chaînes principales": st.column_config.TextColumn(
-                    "Chaînes principales",
-                    help="Cinq premières blockchains où le stablecoin est le plus présent (par circulation).",
-                ),
-                "Tendance capi": st.column_config.LineChartColumn(
-                    "Tendance capi",
-                    width="medium",
-                    help=(
-                        "Mini-graphique de la capitalisation sur la période d'analyse sélectionnée dans la barre latérale. "
-                        "Survole la sparkline pour faire apparaître la valeur ponctuelle ; pour un graphique plein écran, "
-                        "utilise le moteur de recherche « Zoom sur un stablecoin » plus bas."
-                    ),
-                ),
-            },
-        )
-
-        st.markdown("#### Parts de marché — top stablecoins")
-        share_df_full = df_llama.head(20).copy()
-        share_df_full["Part de marché (%)"] = share_df_full["Circulation (USD)"] / df_llama["Circulation (USD)"].sum() * 100
-        top_n_share = share_df_full.head(8).copy()
-        autres = share_df_full.iloc[8:]
-        if not autres.empty:
-            autres_row = pd.DataFrame(
-                [
-                    {
-                        "Symbole": "Autres",
-                        "Nom": f"{len(autres)} autres stablecoins",
-                        "Circulation (USD)": autres["Circulation (USD)"].sum(),
-                        "Part de marché (%)": autres["Part de marché (%)"].sum(),
-                    }
-                ]
-            )
-            share_pie = pd.concat([top_n_share, autres_row], ignore_index=True)
-        else:
-            share_pie = top_n_share
-        share_pie["Capitalisation (USD)"] = share_pie["Circulation (USD)"].apply(format_money)
-
-        bar_fig = px.bar(
-            share_pie.sort_values("Circulation (USD)", ascending=True),
-            x="Part de marché (%)",
-            y="Symbole",
-            orientation="h",
-            color="Part de marché (%)",
-            color_continuous_scale=["#1e3a8a", "#2563eb", "#38bdf8", "#bae6fd"],
-            text="Part de marché (%)",
-            custom_data=["Nom", "Capitalisation (USD)"],
-        )
-        bar_fig.update_traces(
-            texttemplate="%{x:.2f} %",
-            textposition="outside",
-            cliponaxis=False,
-            hovertemplate="<b>%{y}</b><br>%{customdata[0]}<br>Part : %{x:.2f} %<br>Capitalisation : %{customdata[1]}<extra></extra>",
-        )
-        apply_plotly_style(
-            bar_fig,
-            title="Parts de marché — top 8 + agrégat « Autres »",
-            x_title="Part de la capitalisation totale (%)",
-            y_title=None,
-            legend_below=False,
-        )
-        bar_fig.update_layout(showlegend=False, coloraxis_showscale=False, height=420)
-        st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
-
-        st.markdown("##### Vue circulaire détaillée")
-        st.caption("Graphique pleine largeur : les libellés et la légende disposent de plus d'espace, ce qui évite l'empilement observé en colonne.")
-        donut_fig = px.pie(
-            share_pie,
-            names="Symbole",
-            values="Circulation (USD)",
-            hole=0.62,
-            color_discrete_sequence=["#38bdf8", "#2563eb", "#a78bfa", "#22d3ee", "#60a5fa", "#818cf8", "#f472b6", "#facc15", "#94a3b8"],
-        )
-        donut_fig.update_traces(
-            textinfo="label+percent",
-            textposition="outside",
-            textfont=dict(color="#f1f5f9", size=14),
-            marker=dict(line=dict(color="#0b1226", width=2)),
-            pull=[0.015] * len(share_pie),
-            automargin=True,
-            hovertemplate="<b>%{label}</b><br>Capitalisation : %{value:$,.0f}<br>Part : %{percent}<extra></extra>",
-        )
-        apply_plotly_style(donut_fig, title="Vue circulaire — part de capitalisation des stablecoins", legend_below=True)
-        donut_fig.update_layout(
-            height=720,
-            margin=dict(t=95, l=100, r=100, b=150),
-            uniformtext_minsize=11,
-            uniformtext_mode="hide",
-        )
-        st.plotly_chart(donut_fig, width="stretch", config=PLOTLY_CONFIG)
-
-    st.markdown("#### Suivi de peg via Yahoo Finance")
-    peg_df = get_stable_peg_history(days=45)
-    if peg_df.empty:
-        st.info("Suivi de peg via Yahoo Finance indisponible pour le moment.")
-    else:
-        peg_fig = px.line(
-            peg_df,
-            x="Date",
-            y="Prix (USD)",
-            color="Stablecoin",
-            color_discrete_sequence=["#38bdf8", "#2563eb", "#a78bfa", "#22d3ee", "#60a5fa", "#818cf8", "#f472b6"],
-        )
-        peg_fig.update_traces(line=dict(width=1.6))
-        peg_fig.add_hline(y=1.0, line=dict(color="rgba(148,163,184,0.55)", dash="dot"))
-        apply_plotly_style(peg_fig, title="Peg observé vs 1 USD — 45 derniers jours (Yahoo Finance)", y_title="Prix (USD)", x_title="Date")
-        st.plotly_chart(peg_fig, width="stretch", config=PLOTLY_CONFIG)
-
-        latest = peg_df.sort_values("Date").groupby("Stablecoin").tail(1).copy()
-        latest["Écart au peg (pb)"] = (latest["Prix (USD)"] - 1) * 10_000
-        st.markdown("##### Dernière observation par stablecoin")
-        st.dataframe(
-            latest[["Stablecoin", "Date", "Prix (USD)", "Écart au peg (pb)"]],
-            width="stretch",
-            hide_index=True,
-            column_config={
-                "Prix (USD)": st.column_config.NumberColumn("Prix (USD)", format="$ %.4f"),
-                "Écart au peg (pb)": st.column_config.NumberColumn("Écart au peg (pb)", format="%+.1f", help="Écart au peg en points de base (1 pb = 0,01 %). >100 pb = stress significatif."),
-            },
-        )
-
-    st.markdown("#### Capitalisation totale stablecoins — historique DefiLlama")
-    period_days = max((end_date - start_date).days, 30)
-    total_hist = get_stable_total_history(days=period_days)
-    if total_hist.empty:
-        st.info("Historique total DefiLlama momentanément indisponible.")
-    else:
-        total_fig = go.Figure()
-        total_fig.add_trace(
-            go.Scatter(
-                x=total_hist["Date"],
-                y=total_hist["Capitalisation totale (USD)"],
-                mode="lines",
-                fill="tozeroy",
-                line=dict(color="#38bdf8", width=2),
-                fillcolor="rgba(56, 189, 248, 0.20)",
-                name="Capitalisation totale (DefiLlama)",
-                hovertemplate="<b>Total stablecoins</b><br>%{x|%d %b %Y}<br>%{y:$,.0f}<extra></extra>",
-            )
-        )
-        apply_plotly_style(
-            total_fig,
-            title=f"Capitalisation totale des stablecoins — {period_days} derniers jours (USD)",
-            y_title="Capitalisation (USD)",
-            x_title="Date",
-        )
-        total_fig.update_layout(height=440, hovermode="x unified", showlegend=False)
-        st.plotly_chart(total_fig, width="stretch", config=PLOTLY_CONFIG)
-        st.caption(
-            "Trace la capitalisation cumulée de l'ensemble des stablecoins suivis par DefiLlama sur la période "
-            "d'analyse définie dans la barre latérale. Pour zoomer sur un stablecoin précis, utilise le moteur "
-            "de recherche ci-dessous (ou survole la mini-courbe *Tendance capi* du tableau plus haut)."
-        )
-
-    st.markdown("#### Zoom sur un stablecoin")
-    st.caption(
-        "Saisis quelques lettres pour filtrer la liste : la recherche couvre tous les stablecoins disposant d'un "
-        "historique CoinGecko. Le graphique affiche la capitalisation et le cours sur la période d'analyse sélectionnée."
-    )
-
-    detail_id_map = get_stablecoin_id_map()
-    df_llama_norm = df_llama.copy()
-    df_llama_norm["__sym"] = df_llama_norm["Symbole"].astype(str).str.upper()
-    candidates = df_llama_norm[df_llama_norm["__sym"].isin(detail_id_map.keys())].copy()
-
-    if candidates.empty and detail_id_map:
-        candidates = pd.DataFrame(
-            [
-                {"Symbole": sym, "__sym": sym, "Nom": sym, "Circulation (USD)": float("nan")}
-                for sym in detail_id_map.keys()
-            ]
-        )
-
-    if candidates.empty:
-        st.info("Aucun stablecoin avec historique CoinGecko exploitable pour le moment.")
-    else:
-        candidates["__label"] = candidates.apply(
-            lambda r: f"{r['__sym']} — {r.get('Nom') or r['__sym']}".strip(" —"),
-            axis=1,
-        )
-        candidates = candidates.drop_duplicates(subset="__label").reset_index(drop=True)
-        labels = candidates["__label"].tolist()
-        default_idx = 0
-        for i, sym in enumerate(candidates["__sym"]):
-            if sym == "USDT":
-                default_idx = i
-                break
-        selected_label = st.selectbox(
-            "Rechercher un stablecoin",
-            options=labels,
-            index=default_idx,
-            help="Recherche libre par symbole ou nom (filtrage intégré de Streamlit).",
-        )
-        row = candidates.loc[candidates["__label"] == selected_label].iloc[0]
-        selected_symbol = row["__sym"]
-        coin_id = detail_id_map.get(selected_symbol)
-        if not coin_id:
-            st.info("Identifiant CoinGecko introuvable pour ce stablecoin.")
-        else:
-            try:
-                detail_hist = get_coin_history(coin_id, start_date, end_date)
-            except Exception as exc:
-                detail_hist = pd.DataFrame()
-                st.warning(f"Historique indisponible ({exc}).")
-            if detail_hist.empty:
-                st.info("Historique indisponible pour ce stablecoin sur la période sélectionnée.")
-            else:
-                kpi_cols = st.columns(4)
-                last_cap = float(detail_hist["market_cap"].dropna().iloc[-1]) if "market_cap" in detail_hist else float("nan")
-                first_cap = float(detail_hist["market_cap"].dropna().iloc[0]) if "market_cap" in detail_hist else float("nan")
-                last_price = float(detail_hist["price"].dropna().iloc[-1]) if "price" in detail_hist else float("nan")
-                cap_change = ((last_cap / first_cap) - 1) * 100 if first_cap else float("nan")
-                kpi_cols[0].metric("Capitalisation actuelle (USD)", format_money(last_cap))
-                kpi_cols[1].metric("Capitalisation au début (USD)", format_money(first_cap))
-                kpi_cols[2].metric("Variation sur la période", format_pct(cap_change) if pd.notna(cap_change) else "n/a")
-                if pd.notna(last_price):
-                    kpi_cols[3].metric(
-                        "Cours actuel (USD)",
-                        f"$ {last_price:,.4f}".replace(",", " "),
-                        delta=f"{(last_price - 1) * 10_000:+.1f} pb vs peg" if last_price else None,
-                        help="Écart au peg exprimé en points de base (1 pb = 0,01 %).",
-                    )
-
-                detail_fig = make_subplots(
-                    rows=2,
-                    cols=1,
-                    shared_xaxes=True,
-                    vertical_spacing=0.10,
-                    row_heights=[0.62, 0.38],
-                    subplot_titles=("Capitalisation (USD)", "Cours vs 1 USD"),
-                )
-                detail_fig.add_trace(
-                    go.Scatter(
-                        x=detail_hist["date"],
-                        y=detail_hist["market_cap"],
-                        mode="lines",
-                        line=dict(color="#38bdf8", width=2),
-                        fill="tozeroy",
-                        fillcolor="rgba(56, 189, 248, 0.18)",
-                        name="Capitalisation",
-                        hovertemplate="%{x|%d %b %Y}<br>Capi : %{y:$,.0f}<extra></extra>",
-                    ),
-                    row=1,
-                    col=1,
-                )
-                detail_fig.add_trace(
-                    go.Scatter(
-                        x=detail_hist["date"],
-                        y=detail_hist["price"],
-                        mode="lines",
-                        line=dict(color="#facc15", width=1.6),
-                        name="Cours",
-                        hovertemplate="%{x|%d %b %Y}<br>Cours : %{y:$.4f}<extra></extra>",
-                    ),
-                    row=2,
-                    col=1,
-                )
-                detail_fig.add_hline(
-                    y=1.0,
-                    line=dict(color="rgba(148,163,184,0.6)", dash="dot"),
-                    row=2,
-                    col=1,
-                )
-                apply_plotly_style(
-                    detail_fig,
-                    title=f"{selected_symbol} — {row.get('Nom') or ''} ({period_days} jours)",
-                )
-                detail_fig.update_layout(
-                    height=620,
-                    hovermode="x unified",
-                    showlegend=False,
-                    margin=dict(t=90, l=70, r=40, b=60),
-                )
-                detail_fig.update_yaxes(title_text="Capitalisation (USD)", row=1, col=1)
-                detail_fig.update_yaxes(title_text="Cours (USD)", row=2, col=1)
-                detail_fig.update_xaxes(title_text="Date", row=2, col=1)
-                st.plotly_chart(detail_fig, width="stretch", config=PLOTLY_CONFIG)
-                st.caption(
-                    f"Source : CoinGecko (`{coin_id}`). La ligne pointillée à 1 USD sert de repère de peg ; "
-                    "tout écart durable au-delà de quelques dizaines de points de base est un signal de stress."
-                )
-
 with tab_news:
     st.subheader("Actualités & Réglementation")
     news_query = st.text_input(
@@ -2225,6 +2294,28 @@ with tab_news:
 
 with tab_method:
     st.subheader("Méthode, sources et limites")
+    with st.expander("🎯 Vision produit — aller au-delà de CoinGecko & focus stablecoins", expanded=False):
+        st.markdown(
+            """
+            **CoinGecko** excelle comme référentiel grand public (prix, capi, métadonnées). Pour être *plus puissant*,
+            CoCrypto doit **croiser des sources**, **documenter la méthode**, et **répondre à des questions de risque**
+            que CoinGecko ne traite pas nativement — surtout sur les **stablecoins** (peg, réserves, chaînes, concentration).
+
+            **Axes possibles (roadmap)** :
+            - **Données & couverture** : agréger Dune / Arkham / Nansen (flux on-chain), CoinMetrics, Glassnode, TVL DefiLlama,
+              open interest & funding (exchanges), ETF flows, carnets d’ordres (si abonnement).
+            - **Qualité** : base locale (DuckDB), jobs planifiés, SLA, alerting peg / capi, historique non tronqué, audit des gaps.
+            - **Stablecoins** : panel de stress (écart peg, volatilité implicite, corrélation USDT–USDC), alertes « depeg »,
+              répartition par *peg mechanism* / chaîne, **bridged vs native supply**, liste des réserves attestées (liens PDF),
+              courbe *stable dominance* vs risk-on, **MIM + crvusd + GHO** dans le suivi peg.
+            - **Risque & conformité** : scoring MiCA/SEC read-through, tagging actualités + extraction entités (régulateur, actif).
+            - **UX pro** : watchlists, exports CSV/PDF planifiés, thèmes sauvegardés, comparaison multi-stable sur une grille.
+            - **Gouvernance** : taxonomies versionnées, changelog des définitions (cycles, flux proxy), reproducibilité des graphiques.
+
+            *Objectif honnête* : ne pas « battre » CoinGecko sur le catalogue d’actifs, mais **dépasser** sur **l’analyse multi-sources,
+            la transparence méthodologique et le sujet stablecoin / risque** — là où un terminal crypto apporte de la valeur.
+            """
+        )
     st.markdown(
         """
         ### Sources de données
