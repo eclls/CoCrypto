@@ -1,0 +1,131 @@
+{
+  "disclaimer_fr": "Checklist pédagogique — ne constitue pas un avis juridique. Valider avec conseil local avant toute mise sur le marché.",
+  "product_types": [
+    {
+      "id": "fiat_stablecoin",
+      "label_fr": "Stablecoin adossé fiat (ART / équivalent)",
+      "description_fr": "Jeton visant une parité avec une devise ; réserves et émetteur au centre du périmètre."
+    },
+    {
+      "id": "exchange_spot",
+      "label_fr": "Plateforme d'échange spot crypto",
+      "description_fr": "Intermédiation, custody possible, liste d'actifs et conformité investisseurs."
+    },
+    {
+      "id": "custody_only",
+      "label_fr": "Service de conservation (custody)",
+      "description_fr": "Garde d'actifs pour compte de tiers sans nécessairement trading."
+    },
+    {
+      "id": "crypto_fund_retail",
+      "label_fr": "Fonds / produit packagé crypto (retail)",
+      "description_fr": "Véhicule d'investissement collectif ou ETP exposé aux crypto-actifs."
+    }
+  ],
+  "jurisdictions": {
+    "EU": {
+      "fiat_stablecoin": {
+        "perimeter": "high",
+        "summary_fr": "Émetteur soumis à MiCA Titre IV ; significant ART = supervision renforcée.",
+        "checklist": [
+          {"id": "art_auth", "question": "L'émetteur est-il autorisé comme émetteur ART (ou significant ART) ?", "required": true, "hint": "Autorisation CASP/ART via autorité nationale compétente."},
+          {"id": "whitepaper", "question": "White paper ART publié et approuvé si requis ?", "required": true, "hint": "ESMA registre des white papers."},
+          {"id": "reserves", "question": "Réserves adossées et politique de redemption documentées ?", "required": true, "hint": "Audit et composition des réserves."}
+        ]
+      },
+      "exchange_spot": {
+        "perimeter": "high",
+        "summary_fr": "Prestataire CASP : agrément pour services d'échange et éventuellement custody.",
+        "checklist": [
+          {"id": "casp_license", "question": "Agrément CASP (échange / plateforme) obtenu ou en cours ?", "required": true, "hint": "Notification ou autorisation selon services."},
+          {"id": "mica_wp", "question": "White paper crypto-actif pour tokens listés si applicable ?", "required": false, "hint": "Sauf exemptions MiCA."},
+          {"id": "aml", "question": "LCB-FT et travel rule opérationnels ?", "required": true, "hint": "KYC, TRACFIN / équivalent, travel rule VASP."}
+        ]
+      },
+      "custody_only": {
+        "perimeter": "high",
+        "summary_fr": "Service de conservation = activité CASP dédiée.",
+        "checklist": [
+          {"id": "custody_casp", "question": "Agrément incluant conservation d'actifs numériques ?", "required": true, "hint": "Ségrégation des avoirs clients."},
+          {"id": "insurance", "question": "Couverture perte / cyber évaluée ?", "required": false, "hint": "Bonnes pratiques ESMA/EBA."}
+        ]
+      },
+      "crypto_fund_retail": {
+        "perimeter": "high",
+        "summary_fr": "Souvent hors MiCA pur : directive OPCVM / MiFID selon structure.",
+        "checklist": [
+          {"id": "fund_directive", "question": "Produit classé OPCVM / AIF ou offre au détail restreinte ?", "required": true, "hint": "Prospectus et autorité compétente (AMF, CSSF, etc.)."},
+          {"id": "priips", "question": "KID / PRIIPs ou équivalent fourni ?", "required": true, "hint": "Obligations retail UE."}
+        ]
+      }
+    },
+    "FRA": {
+      "fiat_stablecoin": {
+        "perimeter": "high",
+        "summary_fr": "MiCA + supervision AMF/ACPR selon activité.",
+        "checklist": [
+          {"id": "psan_transition", "question": "Si ex-PSAN : dossier de transition CASP déposé ?", "required": true, "hint": "Calendrier AMF post-décembre 2024."},
+          {"id": "acpr_bank", "question": "Émetteur est-il un établissement de crédit pour certains modèles ?", "required": false, "hint": "Stablecoins émis par banques : autre filière."}
+        ]
+      },
+      "exchange_spot": {
+        "perimeter": "high",
+        "summary_fr": "Enregistrement PSAN remplacé par agrément CASP.",
+        "checklist": [
+          {"id": "amf_register", "question": "Inscription / agrément AMF à jour ?", "required": true, "hint": "Registre des PSAN/CASP."},
+          {"id": "marketing_fr", "question": "Publicité conforme doctrine AMF ?", "required": true, "hint": "Avertissements risques et cible investisseurs."}
+        ]
+      },
+      "custody_only": {"perimeter": "high", "summary_fr": "ACPR sur partie prudentielle si dépositaire bancaire.", "checklist": [{"id": "custody_casp", "question": "Agrément conservation CASP ?", "required": true, "hint": "AMF + exigences ACPR si groupe bancaire."}]},
+      "crypto_fund_retail": {"perimeter": "high", "summary_fr": "AMF : agrément gestion et documentation prospectus.", "checklist": [{"id": "amf_fund", "question": "Agrément gestionnaire / visa prospectus ?", "required": true, "hint": "Fonds professionnels vs retail."}]}
+    },
+    "USA": {
+      "fiat_stablecoin": {
+        "perimeter": "high",
+        "summary_fr": "SEC/CFTC + projets loi stablecoin ; banques fédérales pour certains émetteurs.",
+        "checklist": [
+          {"id": "federal_bill", "question": "Suivi des projets GENIUS / STABLE Act ?", "required": false, "hint": "Cadre fédéral en évolution 2025-2026."},
+          {"id": "sec_security", "question": "Le token est-il analysé comme titre ou commodity ?", "required": true, "hint": "Howey vs CFTC pour dérivés/commodities."},
+          {"id": "state_mtl", "question": "Licences d'État (MTL) pour émission/transfert ?", "required": true, "hint": "NY DFS, Wyoming, etc."}
+        ]
+      },
+      "exchange_spot": {
+        "perimeter": "high",
+        "summary_fr": "SEC enregistrement exchange / broker-dealer selon modèle.",
+        "checklist": [
+          {"id": "sec_reg", "question": "Enregistrement SEC ou exemption valide ?", "required": true, "hint": "ATS, broker-dealer, ou litiges en cours selon acteurs."},
+          {"id": "fincen_msb", "question": "Enregistrement FinCEN MSB ?", "required": true, "hint": "BSA/AML."}
+        ]
+      },
+      "custody_only": {"perimeter": "medium", "summary_fr": "Qualified custodian pour conseillers institutionnels.", "checklist": [{"id": "qualified", "question": "Statut qualified custodian ?", "required": true, "hint": "Rule 206(4)-2 Advisers Act."}]},
+      "crypto_fund_retail": {"perimeter": "high", "summary_fr": "ETF spot BTC/ETH approuvés ; autres fonds = prospectus SEC.", "checklist": [{"id": "etf_1940", "question": "Véhicule Investment Company Act ou ETP ?", "required": true, "hint": "ETF = prospectus et market makers enregistrés."}]}
+    },
+    "GBR": {
+      "fiat_stablecoin": {"perimeter": "high", "summary_fr": "FCA + BoE pour stablecoins systémiques.", "checklist": [{"id": "fca_stable", "question": "Enregistrement émetteur stablecoin UK ?", "required": true, "hint": "Régime BoE/FCA post-2024."}]},
+      "exchange_spot": {"perimeter": "high", "summary_fr": "FCA cryptoasset registration + promotions.", "checklist": [{"id": "fca_reg", "question": "Inscription FCA cryptoasset ?", "required": true, "hint": "Registre FCA."}, {"id": "promo", "question": "Promotions approuvées (s.21 FSMA) ?", "required": true, "hint": "Financial promotions regime."}]},
+      "custody_only": {"perimeter": "medium", "summary_fr": "Custody dans le périmètre FCA.", "checklist": [{"id": "custody_uk", "question": "Règles custody FCA respectées ?", "required": true, "hint": "Client asset rules."}]},
+      "crypto_fund_retail": {"perimeter": "high", "summary_fr": "FCA authorised funds ou ETP listés.", "checklist": [{"id": "uk_fund", "question": "Fonds autorisé FCA ou prospectus ETP ?", "required": true, "hint": "UK retail restrictions."}]}
+    }
+  },
+  "iso_to_jurisdiction": {
+    "FRA": "FRA",
+    "DEU": "EU",
+    "ITA": "EU",
+    "ESP": "EU",
+    "NLD": "EU",
+    "BEL": "EU",
+    "LUX": "EU",
+    "AUT": "EU",
+    "PRT": "EU",
+    "IRL": "EU",
+    "POL": "EU",
+    "FIN": "EU",
+    "SWE": "EU",
+    "DNK": "EU",
+    "USA": "USA",
+    "GBR": "GBR",
+    "CHE": "CHE",
+    "SGP": "SGP",
+    "JPN": "JPN"
+  }
+}

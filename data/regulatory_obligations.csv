@@ -1,0 +1,49 @@
+iso_a3,obligation_key,obligation_label_fr,status,effective_date,source_label,source_url,notes_fr
+EU,casp_licensing,Agrément prestataire crypto (CASP),in_force,2024-12-30,Règlement MiCA (UE) 2023/1114,https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114,Autorisation unique ou notification selon services ; délais transitoires PSAN.
+EU,stablecoin_issuer,Régime émetteur stablecoin (ART),in_force,2024-06-30,MiCA — Titre IV (ART),https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114,Significant vs other ART ; réserves et gouvernance encadrées.
+EU,marketing_rules,Communication / promotion crypto,in_force,2024-12-30,MiCA — protection investisseurs,https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114,White papers CASP ; interdictions de certaines pratiques marketing.
+EU,custody_rules,Conservation d'actifs numériques,in_force,2024-12-30,MiCA — custody,https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114,Ségrégation et responsabilité du dépositaire crypto.
+EU,travel_rule,Travel rule VASP,in_force,2024-12-30,Transfert de fonds + MiCA,https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114,Alignement avec TFR pour transferts crypto-actifs.
+EU,retail_cbdc,CBDC détail (digital euro),proposed,2026-01-01,BCE — projet digital euro,https://www.ecb.europa.eu/paym/digital_euro/html/index.fr.html,Phase préparation ; pas de lancement retail à date.
+FRA,casp_licensing,Agrément prestataire crypto (PSAN → CASP),in_force,2024-12-30,AMF — transition MiCA,https://www.amf-france.org/fr/actualites-publications/actualites/mica,Enregistrements PSAN existants : parcours de transition vers agrément CASP.
+FRA,stablecoin_issuer,Régime émetteur stablecoin,in_force,2024-06-30,AMF / ACPR — stablecoins,https://www.amf-france.org/,ART significatifs supervisés au niveau UE ; émetteurs soumis à réserves.
+FRA,marketing_rules,Communication / promotion crypto,in_force,2024-12-30,AMF — doctrine publicité,https://www.amf-france.org/,Contrôle renforcé des communications vers investisseurs retail.
+FRA,custody_rules,Conservation d'actifs numériques,in_force,2024-12-30,ACPR — prudentiel,https://acpr.banque-france.fr/,Custody dans le périmètre des services CASP agréés.
+FRA,travel_rule,Travel rule VASP,in_force,2024-12-30,TRACFIN / AMF,https://www.amf-france.org/,Obligations LCB-FT sur transferts crypto.
+FRA,retail_cbdc,CBDC détail,in_force,2023-01-01,Banque de France — expérimentations,https://www.banque-france.fr/,Pilotes wholesale ; digital euro piloté au niveau Eurosystem.
+DEU,casp_licensing,Agrément prestataire crypto (CASP),in_force,2024-12-30,BaFin — crypto custody & services,https://www.bafin.de/,Licences existantes étendues au cadre MiCA.
+DEU,stablecoin_issuer,Régime émetteur stablecoin,in_force,2024-06-30,BaFin — stablecoins,https://www.bafin.de/,Émetteurs ART soumis à autorisation UE.
+DEU,marketing_rules,Communication / promotion crypto,in_force,2024-12-30,BaFin — MiCA,https://www.bafin.de/,Information claire et avertissements risques.
+DEU,custody_rules,Conservation d'actifs numériques,in_force,2019-01-01,BaFin — crypto custody license,https://www.bafin.de/,Premiers agréments custody crypto en UE.
+DEU,travel_rule,Travel rule VASP,in_force,2024-12-30,BaFin / GwG,https://www.bafin.de/,Transposition nationale LCB-FT.
+DEU,retail_cbdc,CBDC détail,proposed,2026-01-01,Bundesbank — digital euro,https://www.bundesbank.de/,Participation Eurosystem ; pas de e-euro retail live.
+USA,casp_licensing,Agrément prestataire crypto (exchange/custody),adopted,2025-01-01,SEC / états (BitLicense etc.),https://www.sec.gov/,Cadre fédéral fragmenté ; licences d'État et enregistrements MSB.
+USA,stablecoin_issuer,Régime émetteur stablecoin,proposed,2025-06-01,GENIUS Act (projet),https://www.congress.gov/,Projets législatifs fédéraux sur stablecoins adossés ; statut évolutif.
+USA,marketing_rules,Communication / promotion crypto,in_force,2024-01-01,SEC — marketing rule crypto,https://www.sec.gov/,Promotions et offres traitées comme titres selon Howey.
+USA,custody_rules,Conservation d'actifs numériques,in_force,2023-01-01,SEC custody rule (qualified custodian),https://www.sec.gov/,Exigences pour conseillers et custodians institutionnels.
+USA,travel_rule,Travel rule VASP,in_force,2023-01-01,FinCEN — travel rule,https://www.fincen.gov/,Obligations sur VASP et transferts > seuil.
+USA,retail_cbdc,CBDC détail,proposed,2026-01-01,Federal Reserve — CBDC research,https://www.federalreserve.gov/,Recherche Fed ; pas de dollar retail CBDC lancé.
+GBR,casp_licensing,Agrément prestataire crypto (FCA register),in_force,2024-10-01,FCA — cryptoasset regime,https://www.fca.org.uk/firms/cryptoassets,Regime UK post-Brexit ; promotions et enregistrement.
+GBR,stablecoin_issuer,Régime émetteur stablecoin,in_force,2024-10-01,FCA / BoE — stablecoins,https://www.bankofengland.co.uk/,Cadre UK pour stablecoins systémiques et émetteurs.
+GBR,marketing_rules,Communication / promotion crypto,in_force,2024-10-01,FCA — financial promotions,https://www.fca.org.uk/,Approbation des promotions crypto vers UK consumers.
+GBR,custody_rules,Conservation d'actifs numériques,in_force,2024-10-01,FCA custody requirements,https://www.fca.org.uk/,Règles de garde et ségrégation UK.
+GBR,travel_rule,Travel rule VASP,in_force,2023-09-01,FCA — travel rule UK,https://www.fca.org.uk/,Transposition post-Brexit travel rule crypto.
+GBR,retail_cbdc,CBDC détail,proposed,2026-01-01,Bank of England — digital pound,https://www.bankofengland.co.uk/,Consultations retail CBDC ; pilotes wholesale en cours.
+CHE,casp_licensing,Agrément prestataire crypto (FINMA),in_force,2019-01-01,FINMA — fintech & DLT,https://www.finma.ch/,Licences banking / securities / DLT trading facility.
+CHE,stablecoin_issuer,Régime émetteur stablecoin,in_force,2023-01-01,FINMA — stablecoin guidance,https://www.finma.ch/,Stablecoins soumis à banking ou securities selon structure.
+CHE,marketing_rules,Communication / promotion crypto,in_force,2023-01-01,FINMA — AML & conduct,https://www.finma.ch/,Devoir d'information et LBA.
+CHE,custody_rules,Conservation d'actifs numériques,in_force,2019-01-01,FINMA custody,https://www.finma.ch/,Custody dans licences bancaires / DLT.
+CHE,travel_rule,Travel rule VASP,in_force,2024-01-01,FINMA — VASP travel rule,https://www.finma.ch/,Alignement standards FATF.
+CHE,retail_cbdc,CBDC détail,sandbox,2024-01-01,SNB — Helvetia / wholesale,https://www.snb.ch/,Focus wholesale CBDC ; retail non annoncé.
+SGP,casp_licensing,Agrément prestataire crypto (PSA),in_force,2020-01-28,MAS — Payment Services Act,https://www.mas.gov.sg/regulation/capital-markets/payment-services-act,Licences DPT service providers.
+SGP,stablecoin_issuer,Régime émetteur stablecoin,in_force,2023-08-15,MAS — stablecoin framework,https://www.mas.gov.sg/,Cadre MAS pour single-currency stablecoins régulés.
+SGP,marketing_rules,Communication / promotion crypto,in_force,2023-01-01,MAS — conduct,https://www.mas.gov.sg/,Protection consommateurs et publicité DPT.
+SGP,custody_rules,Conservation d'actifs numériques,in_force,2020-01-28,MAS — custody under PSA,https://www.mas.gov.sg/,Safeguarding of customer assets.
+SGP,travel_rule,Travel rule VASP,in_force,2023-01-01,MAS — travel rule notice,https://www.mas.gov.sg/,Transferts DPT soumis à travel rule.
+SGP,retail_cbdc,CBDC détail,sandbox,2023-11-01,MAS — purpose-bound money pilots,https://www.mas.gov.sg/,Pilotes paiement tokenisé ; pas de CBDC retail général.
+JPN,casp_licensing,Agrément prestataire crypto (exchange),in_force,2017-04-01,FSA — Payment Services Act crypto,https://www.fsa.go.jp/,Enregistrement exchanges crypto.
+JPN,stablecoin_issuer,Régime émetteur stablecoin,in_force,2023-06-01,FSA — stablecoin law,https://www.fsa.go.jp/,Stablecoins limités aux institutions agréées (banques / transfert).
+JPN,marketing_rules,Communication / promotion crypto,in_force,2023-01-01,FSA — investor protection,https://www.fsa.go.jp/,Règles sur ICO et crypto-asset handling.
+JPN,custody_rules,Conservation d'actifs numériques,in_force,2023-01-01,FSA — custody separation,https://www.fsa.go.jp/,Séparation des avoirs clients.
+JPN,travel_rule,Travel rule VASP,in_force,2022-04-01,FSA — travel rule Japan,https://www.fsa.go.jp/,Obligation d'information expéditeur/bénéficiaire.
+JPN,retail_cbdc,CBDC détail,sandbox,2023-04-01,BoJ — CBDC experiments,https://www.boj.or.jp/,Pilotes techniques ; pas de lancement public.

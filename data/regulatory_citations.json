@@ -1,0 +1,66 @@
+{
+  "EU": [
+    {
+      "id": "mica-reg",
+      "label": "Règlement MiCA",
+      "instrument": "Règlement (UE) 2023/1114",
+      "article": "ensemble",
+      "url": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114",
+      "summary_fr": "Cadre harmonisé pour crypto-actifs, émetteurs ART et prestataires de services (CASP) dans l'EEE."
+    },
+    {
+      "id": "mica-art-iv",
+      "label": "MiCA — crypto-actifs référencés (ART)",
+      "instrument": "Règlement (UE) 2023/1114",
+      "article": "Titre IV",
+      "url": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114",
+      "summary_fr": "Réserves, gouvernance et classification significant / other ART."
+    }
+  ],
+  "FRA": [
+    {
+      "id": "loi-pacte",
+      "label": "Loi PACTE — actifs numériques",
+      "instrument": "Loi n° 2019-486",
+      "article": "art. L. 54-10-1 CMF et s.",
+      "url": "https://www.legifrance.gouv.fr/",
+      "summary_fr": "Création du régime PSAN, désormais intégré dans la transition MiCA."
+    },
+    {
+      "id": "amf-mica",
+      "label": "Doctrine AMF — MiCA",
+      "instrument": "Position AMF",
+      "article": "n/a",
+      "url": "https://www.amf-france.org/",
+      "summary_fr": "Guides sur l'agrément CASP et la communication financière."
+    }
+  ],
+  "USA": [
+    {
+      "id": "sec-howey",
+      "label": "SEC — cadre titres (Howey)",
+      "instrument": "Securities Act / Exchange Act",
+      "article": "test Howey",
+      "url": "https://www.sec.gov/corpfin/framework-investment-contract-analysis-digital-assets",
+      "summary_fr": "Analyse au cas par cas : nombreux tokens et offres traités comme titres."
+    },
+    {
+      "id": "fincen-travel",
+      "label": "FinCEN — travel rule",
+      "instrument": "31 CFR",
+      "article": "travel rule VASP",
+      "url": "https://www.fincen.gov/",
+      "summary_fr": "Informations sur l'expéditeur et le bénéficiaire pour transferts crypto."
+    }
+  ],
+  "GBR": [
+    {
+      "id": "fca-crypto-regime",
+      "label": "FCA — cryptoasset regime",
+      "instrument": "FSMA / RAO",
+      "article": "financial promotions",
+      "url": "https://www.fca.org.uk/firms/cryptoassets",
+      "summary_fr": "Enregistrement et contrôle des promotions crypto au Royaume-Uni."
+    }
+  ]
+}

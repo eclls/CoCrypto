@@ -1,0 +1,92 @@
+[
+  {
+    "iso_a3": "EU",
+    "date": "2023-05-31",
+    "title": "Publication du règlement MiCA",
+    "status": "adopted",
+    "themes": ["casp_licensing", "stablecoin_issuer"],
+    "source_label": "Journal officiel UE",
+    "source_url": "https://eur-lex.europa.eu/legal-content/FR/TXT/?uri=CELEX%3A32023R1114"
+  },
+  {
+    "iso_a3": "EU",
+    "date": "2024-06-30",
+    "title": "Entrée en vigueur — Titre III & IV MiCA (ART & émetteurs)",
+    "status": "in_force",
+    "themes": ["stablecoin_issuer"],
+    "source_label": "ESMA — calendrier MiCA",
+    "source_url": "https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/markets-crypto-assets-regulation-mica"
+  },
+  {
+    "iso_a3": "EU",
+    "date": "2024-12-30",
+    "title": "Entrée en vigueur — prestataires de services crypto-actifs (CASP)",
+    "status": "in_force",
+    "themes": ["casp_licensing", "custody_rules", "marketing_rules"],
+    "source_label": "ESMA — MiCA",
+    "source_url": "https://www.esma.europa.eu/esmas-activities/digital-finance-and-innovation/markets-crypto-assets-regulation-mica"
+  },
+  {
+    "iso_a3": "FRA",
+    "date": "2019-12-22",
+    "title": "Loi PACTE — cadre PSAN",
+    "status": "in_force",
+    "themes": ["casp_licensing"],
+    "source_label": "AMF — PSAN",
+    "source_url": "https://www.amf-france.org/fr/professionnels/fintech/mon-acteur-est-il-un-prestataire-sur-actifs-numeriques-psan"
+  },
+  {
+    "iso_a3": "FRA",
+    "date": "2024-12-30",
+    "title": "Transition PSAN → agrément CASP MiCA",
+    "status": "in_force",
+    "themes": ["casp_licensing"],
+    "source_label": "AMF — MiCA",
+    "source_url": "https://www.amf-france.org/"
+  },
+  {
+    "iso_a3": "USA",
+    "date": "2024-01-10",
+    "title": "Approbations ETF spot Bitcoin (SEC)",
+    "status": "in_force",
+    "themes": ["marketing_rules"],
+    "source_label": "SEC — press releases",
+    "source_url": "https://www.sec.gov/news/pressreleases"
+  },
+  {
+    "iso_a3": "USA",
+    "date": "2025-01-01",
+    "title": "Projets législatifs fédéraux stablecoin (GENIUS / STABLE)",
+    "status": "proposed",
+    "themes": ["stablecoin_issuer"],
+    "source_label": "Congress.gov",
+    "source_url": "https://www.congress.gov/"
+  },
+  {
+    "iso_a3": "GBR",
+    "date": "2024-10-01",
+    "title": "Régime FCA cryptoassets & financial promotions",
+    "status": "in_force",
+    "themes": ["casp_licensing", "marketing_rules"],
+    "source_label": "FCA",
+    "source_url": "https://www.fca.org.uk/firms/cryptoassets"
+  },
+  {
+    "iso_a3": "SGP",
+    "date": "2023-08-15",
+    "title": "Cadre MAS pour stablecoins à devise unique",
+    "status": "in_force",
+    "themes": ["stablecoin_issuer"],
+    "source_label": "MAS",
+    "source_url": "https://www.mas.gov.sg/"
+  },
+  {
+    "iso_a3": "JPN",
+    "date": "2023-06-01",
+    "title": "Loi sur les stablecoins — émetteurs agréés uniquement",
+    "status": "in_force",
+    "themes": ["stablecoin_issuer"],
+    "source_label": "FSA Japan",
+    "source_url": "https://www.fsa.go.jp/"
+  }
+]

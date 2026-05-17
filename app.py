@@ -16,6 +16,10 @@ import requests
 import streamlit as st
 import yfinance as yf
 
+import regulatory_data as regdata
+import ui_regulatory
+import ui_surveillance
+
 
 APP_NAME = "CoCrypto"
 COINGECKO = "https://api.coingecko.com/api/v3"
@@ -1374,13 +1378,14 @@ else:
     strip_cols[3].metric("Peg — écart max (7 j)", "n/a", help="—")
 st.caption("Bandeau stablecoins : vue synthétique DefiLlama + stress de peg court terme (Yahoo). Détail dans l'onglet *Stablecoins*.")
 
-tab_market, tab_stables, tab_asset, tab_compare, tab_flows, tab_news, tab_method = st.tabs(
+tab_market, tab_stables, tab_asset, tab_compare, tab_flows, tab_surveillance, tab_news, tab_method = st.tabs(
     [
         "Marché",
         "Stablecoins",
         "Fiche crypto",
         "Comparaisons",
         "Flux & cycles",
+        "Suivi & surveillance",
         "Actu & Réglementation",
         "Méthode & limites",
     ]
@@ -2421,14 +2426,29 @@ with tab_flows:
     except Exception as exc:
         st.warning(f"Catégories indisponibles : {exc}")
 
+with tab_surveillance:
+    ui_surveillance.render_surveillance_tab(
+        get_stablecoins_defillama=get_stablecoins_defillama,
+        get_stable_peg_history=get_stable_peg_history,
+        get_news_regulation=lambda: get_news("regulation"),
+        global_data=global_data,
+        apply_plotly_style=apply_plotly_style,
+        plotly_config=PLOTLY_CONFIG,
+    )
+
 with tab_news:
     st.subheader("Actu & réglementation")
     news_section = st.radio(
         "Afficher",
-        ["Actu crypto", "Réglementation — atlas par zone"],
+        [
+            "Actu crypto",
+            "Réglementation — atlas",
+            "Cadre juridique (V2–V3)",
+            "Read-through produit (V4)",
+        ],
         horizontal=True,
         key="news_subsection",
-        help="Basculer entre le fil d’actu crypto et l’atlas réglementaire (carte + fiches). Un menu évite le bug d’affichage des onglets imbriqués sur Streamlit Cloud.",
+        help="Actu, carte pays, grille d'obligations / timeline / citations, ou checklist produit par juridiction.",
     )
 
     if news_section == "Actu crypto":
@@ -2459,6 +2479,17 @@ with tab_news:
                     )
         except Exception as exc:
             st.warning(f"Flux RSS indisponibles : {exc}")
+
+    elif news_section in ("Cadre juridique (V2–V3)", "Read-through produit (V4)"):
+        atlas_rows, _ = load_regulatory_atlas()
+        if not atlas_rows:
+            st.warning("Données d’atlas indisponibles — impossible d’afficher le cadre juridique.")
+        else:
+            atlas_df_meta = pd.DataFrame(atlas_rows)
+            if news_section.startswith("Cadre"):
+                ui_regulatory.render_cadre_juridique_page(atlas_df_meta)
+            else:
+                ui_regulatory.render_readthrough_page(atlas_df_meta)
 
     else:
         st.markdown(
@@ -2581,6 +2612,11 @@ with tab_news:
                 )
             st.markdown(row.get("summary_fr") or "")
 
+            with st.expander("Obligations, chronologie & textes (V2–V3)", expanded=False):
+                ui_regulatory.render_obligations_section(str(row["iso_a3"]), selected_name)
+                ui_regulatory.render_timeline_section(str(row["iso_a3"]))
+                ui_regulatory.render_citations_section(str(row["iso_a3"]))
+
             st.markdown("#### Sites officiels & régulateurs")
             links = row.get("links") or []
             if isinstance(links, list) and links:
@@ -2609,11 +2645,20 @@ with tab_news:
                     for _, article in combined.iterrows():
                         summary = str(article.get("summary", ""))
                         summary_short = summary[:320] + ("…" if len(summary) > 320 else "")
+                        tags = regdata.classify_regulatory_article(
+                            str(article.get("title", "")), summary
+                        )
+                        tags_html = (
+                            f'<div class="meta">Thèmes : {", ".join(tags)}</div>'
+                            if tags
+                            else ""
+                        )
                         st.markdown(
                             f"""
                             <div class="co-news">
                               <a href="{article['link']}" target="_blank">{article['title']}</a>
                               <div class="meta">{article['source']} — {article['published']}</div>
+                              {tags_html}
                               <div style="margin-top: 0.35rem; color: var(--co-text);">{summary_short}</div>
                             </div>
                             """,
@@ -2654,6 +2699,8 @@ with tab_method:
         - **Yahoo Finance (via `yfinance`)** — benchmarks (`GLD`, `BLOK`) et suivi du peg des stablecoins (`USDT-USD`, `USDC-USD`, …).
         - **Flux RSS** — **Actu** : CoinDesk, Cointelegraph, Bitcoin Magazine. **Réglementation** : SEC, ESMA, BCE, FCA, AMF (flux RSS AMF), ABE (EBA), Bank of England.
         - **Atlas réglementaire** — fiches pays (textes, liens, mots-clés) et **indices 0–100** versionnés (date d’effet et source par entrée) ; contenu pédagogique, non juridique.
+        - **Cadre juridique V2–V4** — obligations structurées, chronologie, citations officielles, checklist read-through produit (non juridique).
+        - **Suivi & surveillance** — radar stablecoins, alertes peg (seuil configurable), veille réglementaire par juridiction et thème.
 
         Tout est gratuit, sans clé API. CoinGecko applique un plafond de requêtes : un message d'erreur 429
         peut apparaître temporairement, il suffit de rafraîchir quelques secondes plus tard.
